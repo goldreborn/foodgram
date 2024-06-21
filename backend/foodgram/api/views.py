@@ -10,8 +10,7 @@
 
 Каждый ViewSet предоставляет набор методов для выполнения операций с данными.
 """
-from urllib3.response import HTTPResponse
-
+from django.http import HttpResponse
 from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -29,14 +28,11 @@ from . import serializers
 from recipes import models
 from users.models import Subscription
 
-
 User = get_user_model()
-
 
 PROTEIN_KCAL = 4
 FAT_KCAL = 9
 CARBOHYDRATE_KCAL = 4
-
 
 class TagViewSet(ModelViewSet):
     """
@@ -45,10 +41,9 @@ class TagViewSet(ModelViewSet):
     Этот класс предоставляет CRUD-операции для тегов рецептов.
     Он использует TagSerializer для сериализации и десериализации тегов.
     """
-
     queryset = models.Tag.objects.all()
     serializer_class = serializers.TagSerializer
-    permissions = (AllowAny,)
+    permission_classes = (AllowAny,)
 
 
 class UserViewSet(DjoserUserViewSet):
@@ -58,7 +53,6 @@ class UserViewSet(DjoserUserViewSet):
     Этот класс предоставляет CRUD-операции для пользователей.
     Он использует UserSerializer для сериализации и десериализации юзеров.
     """
-
     queryset = User.objects.all()
     serializer_class = serializers.UserSerializer
 
@@ -68,14 +62,13 @@ class UserViewSet(DjoserUserViewSet):
 
         return: serializer класс
         """
-        if self.action == 'list':
-            return serializers.UserSerializer
-        elif self.action == 'retrieve':
+        if self.action == 'list' or self.action == 'retrieve':
             return serializers.UserSerializer
         elif self.action == 'create':
             return serializers.UserCreateSerializer
-        elif self.action == 'update':
+        elif self.action == 'update' or self.action == 'partial_update':
             return serializers.UserSerializer
+        return super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
         """
@@ -88,9 +81,7 @@ class UserViewSet(DjoserUserViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=HTTP_201_CREATED, headers=headers
-        )
+        return Response(serializer.data, status=HTTP_201_CREATED, headers=headers)
 
     def update(self, request, *args, **kwargs):
         """
@@ -102,12 +93,9 @@ class UserViewSet(DjoserUserViewSet):
         """
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(
-            instance, data=request.data, partial=partial
-        )
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
@@ -125,7 +113,7 @@ class UserViewSet(DjoserUserViewSet):
 
 class IngredientViewSet(ReadOnlyModelViewSet):
     """
-    ViewSet для игрелиентов.
+    ViewSet для ингредиентов.
 
     Получение информации о ингредиенте.
     """
@@ -144,12 +132,9 @@ class RecipeViewSet(ModelViewSet):
     Этот класс предоставляет CRUD-операции для рецептов.
     Он использует RecipeSerializer для сериализации и десериализации рецептов.
     """
-
     queryset = models.Recipe.objects.all().order_by('-pub_date')
     serializer_class = serializers.RecipeSerializer
     pagination_class = PageNumberPagination
-
-    
 
     @action(methods=['post'], detail=True)
     @atomic
@@ -210,7 +195,6 @@ class FavoritesViewSet(ModelViewSet):
     Он использует FavoritesSerializer для сериализации
     и десериализации избранного.
     """
-
     queryset = models.Favorites.objects.all()
     serializer_class = serializers.FavoritesSerializer
 
@@ -223,7 +207,6 @@ class SubscriptionViewSet(ModelViewSet):
     Он использует SubscriptionSerializer для сериализации
     и десериализации подписок.
     """
-
     queryset = Subscription.objects.all()
     serializer_class = serializers.SubscriptionSerializer
 
@@ -258,7 +241,6 @@ class ShoppingListViewSet(ModelViewSet):
     Он использует ShoppingListSerializer для сериализации
     и десериализации списка покупок.
     """
-
     queryset = models.ShoppingList.objects.all()
     serializer_class = serializers.ShoppingListSerializer
 
@@ -274,11 +256,14 @@ class ShoppingListViewSet(ModelViewSet):
         ingredients = {}
         for item in shopping_list:
             for ingredient in item.recipe.ingredients.all():
-                if ingredient.name in ingredients:
-                    ingredients[ingredient.name] += ingredient.quantity
+                name = ingredient.name
+                quantity = item.recipe.recipeingredient_set.get(ingredient=ingredient).amount
+                if name in ingredients:
+                    ingredients[name] += quantity
                 else:
-                    ingredients[ingredient.name] = ingredient.quantity
-        response = HTTPResponse(content_type='text/plain')
+                    ingredients[name] = quantity
+
+        response = HttpResponse(content_type='text/plain')
         response['Content-Disposition'] = 'attachment; filename="buy_list.txt"'
         for ingredient, quantity in ingredients.items():
             response.write(f'{ingredient} - {quantity}\n')

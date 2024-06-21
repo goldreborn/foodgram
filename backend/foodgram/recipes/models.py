@@ -113,22 +113,24 @@ class Recipe(models.Model):
     name = models.CharField(
         verbose_name='Рецепт',
         max_length=255,
+        null=False
     )
     author = models.ForeignKey(
         verbose_name='Автор',
         related_name='recipes',
         to=User,
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
+        null=True
     )
     tags = models.ManyToManyField(
-        verbose_name='Тег',
+        verbose_name='Теги',
         related_name='recipes',
-        to='tag',
+        db_index=True,
+        to=Tag,
     )
     ingredients = models.ManyToManyField(
         verbose_name='Ингредиенты',
-        related_name='recipes',
+        related_name='ingredients',
         to=Ingredient,
         through='RecipeIngredient',
     )
@@ -184,28 +186,23 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    """Модель ингредиента-рецепта."""
+    """Модель ингредиентов-рецепта."""
 
+    ingredients = models.ForeignKey(
+        Ingredient, on_delete=models.CASCADE,
+        related_name='ingredients_list', verbose_name='Ингредиенты'
+    )
     recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name='recipeingredients',
-        verbose_name='Рецепт'
-
+        Recipe, on_delete=models.CASCADE,
+        related_name='recipes_ingredients_list', verbose_name='Рецепт'
     )
-    ingredient = models.ForeignKey(
-        Ingredient,
-        on_delete=models.CASCADE,
-        related_name='recipeingredients',
-        verbose_name='Ингредиент'
+    amount = models.PositiveSmallIntegerField(
+        default=0.1, validators=[MinValueValidator(1)],
+        verbose_name='Количество ингредиентов'
     )
-    amount = models.IntegerField(
-        'Количество',
-        validators=[
-            MinValueValidator(
-                0, 'Количество ингредиентов не может быть меньше 0'
-            )
-        ]
+    measurement_unit = models.CharField(
+        verbose_name='Единицы измерения',
+        max_length=INGREDIENT_MAX_UNITS,
     )
 
     class Meta:

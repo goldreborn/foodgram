@@ -14,7 +14,7 @@ from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework.serializers import (
-    ModelSerializer, StringRelatedField, ImageField
+    ModelSerializer, StringRelatedField, ImageField, PrimaryKeyRelatedField
 )
 
 from recipes import models
@@ -51,10 +51,9 @@ class TagSerializer(ModelSerializer):
 
     class Meta:
         """Мета-класс сериализатора тега."""
-
         model = models.Tag
         fields = '__all__'
-        read_only_fields = '__all__'
+        read_only_fields = ('id',)
 
 
 class IngredientSerializer(ModelSerializer):
@@ -66,10 +65,9 @@ class IngredientSerializer(ModelSerializer):
 
     class Meta:
         """Мета-класс сериализатора ингредиента."""
-
         model = models.Ingredient
         fields = '__all__'
-        read_only_fields = '__all__'
+        read_only_fields = ('id',)
 
 
 class RecipeSerializer(ModelSerializer):
@@ -86,7 +84,6 @@ class RecipeSerializer(ModelSerializer):
 
     class Meta:
         """Мета-класс сериализатора рецепта."""
-
         model = models.Recipe
         fields = '__all__'
 
@@ -94,16 +91,12 @@ class RecipeSerializer(ModelSerializer):
         """
         Метод валидации данных рецепта.
 
-        Проверяет, что время приготовления и каллорийность не отрицательны.
+        Проверяет, что время приготовления и калорийность не отрицательны.
         """
         if data.get('cooking_time') < 0:
-            raise ValidationError({
-                'cooking_time': 'Время приготовления не может быть меньше 0'
-            })
+            raise ValidationError({'cooking_time': 'Время приготовления не может быть меньше 0'})
         if data.get('total_calories') < 0:
-            raise ValidationError({
-                'total_calories': 'Каллорийность не может быть отрицательной'
-            })
+            raise ValidationError({'total_calories': 'Калорийность не может быть отрицательной'})
         return data
 
     def to_representation(self, instance):
@@ -166,24 +159,23 @@ class ShoppingListSerializer(ModelSerializer):
     Используется для преобразования данных модели ShoppingList в формат JSON.
     """
 
-    recipe = RecipeSerializer()
+    recipe = PrimaryKeyRelatedField(queryset=models.Recipe.objects.all())
     user = StringRelatedField()
 
     class Meta:
         """Мета-класс сериализатора списка покупок."""
-
         model = models.ShoppingList
         fields = ('id', 'recipe', 'user', 'date_added',)
 
     def create(self, validated_data):
         """
-        Метод создания нового объекта Carts.
+        Метод создания нового объекта ShoppingList.
 
         Проверяет, что рецепт не добавлен в список покупок ранее.
         """
         recipe = validated_data.get('recipe')
         user = validated_data.get('user')
-        if models.Carts.objects.filter(recipe=recipe, user=user).exists():
+        if models.ShoppingList.objects.filter(recipe=recipe, user=user).exists():
             raise ValidationError('Рецепт уже добавлен в список покупок')
         return super().create(validated_data)
 
@@ -200,7 +192,6 @@ class SubscriptionSerializer(ModelSerializer):
 
     class Meta:
         """Мета класс подписок."""
-
         model = user_models.Subscription
         fields = ('id', 'user', 'author', 'subscribed_at',)
 
@@ -212,9 +203,7 @@ class SubscriptionSerializer(ModelSerializer):
         """
         user = attrs.get('user')
         author = attrs.get('author')
-        if models.Subscription.objects.filter(
-            user=user, author=author
-        ).exists():
+        if user_models.Subscription.objects.filter(user=user, author=author).exists():
             raise ValidationError('Вы уже подписаны на этого автора')
         return attrs
 
@@ -226,12 +215,11 @@ class FavoritesSerializer(ModelSerializer):
     Используется для преобразования данных модели Favorites в формат JSON.
     """
 
-    recipe = RecipeSerializer()
+    recipe = PrimaryKeyRelatedField(queryset=models.Recipe.objects.all())
     user = StringRelatedField()
 
     class Meta:
         """Мета-класс избранного."""
-
         model = models.Favorites
         fields = ('id', 'recipe', 'user', 'date_added',)
 
@@ -257,7 +245,6 @@ class UserGetSerializer(UserSerializer):
 
     class Meta:
         """Мета-класс сериализатора пользователя."""
-
         model = user_models.User
         fields = ('id', 'username', 'email', 'first_name', 'last_name',)
 
@@ -271,7 +258,6 @@ class UserSignUpSerializer(UserCreateSerializer):
 
     class Meta:
         """Мета-класс сериализатора который создает нового пользователя."""
-
         model = user_models.User
         fields = (
             'id', 'email', 'username', 'first_name', 'last_name', 'password',

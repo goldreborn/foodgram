@@ -1,9 +1,16 @@
-import django_filters
+from django_filters import FilterSet, CharFilter
+from django.utils.encoding import force_str
+
 from recipes.models import Ingredient
 
-class IngredientFilter(django_filters.FilterSet):
-    name = django_filters.CharFilter(lookup_expr='icontains')
+
+class IngredientFilter(FilterSet):
+    name = CharFilter(method='filter_name')
 
     class Meta:
         model = Ingredient
         fields = ('name',)
+
+    def filter_name(self, queryset, _, value):
+        value = force_str(value)
+        return queryset.filter(name__icontains=value)
