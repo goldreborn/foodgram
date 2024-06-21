@@ -27,7 +27,7 @@ class Base64ImageField(ImageField):
     """
     Поле для хранения изображений в формате Base64.
 
-    Это поле позволяет хранить изображения в формате Base64, 
+    Это поле позволяет хранить изображения в формате Base64,
     что полезно для передачи изображений через API.
     """
 
@@ -94,9 +94,13 @@ class RecipeSerializer(ModelSerializer):
         Проверяет, что время приготовления и калорийность не отрицательны.
         """
         if data.get('cooking_time') < 0:
-            raise ValidationError({'cooking_time': 'Время приготовления не может быть меньше 0'})
+            raise ValidationError(
+                {'cooking_time': 'Время приготовления не может быть меньше 0'}
+            )
         if data.get('total_calories') < 0:
-            raise ValidationError({'total_calories': 'Калорийность не может быть отрицательной'})
+            raise ValidationError(
+                {'total_calories': 'Калорийность не может быть отрицательной'}
+            )
         return data
 
     def to_representation(self, instance):
@@ -175,7 +179,9 @@ class ShoppingListSerializer(ModelSerializer):
         """
         recipe = validated_data.get('recipe')
         user = validated_data.get('user')
-        if models.ShoppingList.objects.filter(recipe=recipe, user=user).exists():
+        if models.ShoppingList.objects.filter(
+            recipe=recipe, user=user
+        ).exists():
             raise ValidationError('Рецепт уже добавлен в список покупок')
         return super().create(validated_data)
 
@@ -203,7 +209,9 @@ class SubscriptionSerializer(ModelSerializer):
         """
         user = attrs.get('user')
         author = attrs.get('author')
-        if user_models.Subscription.objects.filter(user=user, author=author).exists():
+        if user_models.Subscription.objects.filter(
+            user=user, author=author
+        ).exists():
             raise ValidationError('Вы уже подписаны на этого автора')
         return attrs
 

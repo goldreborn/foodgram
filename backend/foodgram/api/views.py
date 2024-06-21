@@ -16,7 +16,6 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
 from djoser.views import UserViewSet as DjoserUserViewSet
 from django.contrib.auth import get_user_model
@@ -33,6 +32,7 @@ User = get_user_model()
 PROTEIN_KCAL = 4
 FAT_KCAL = 9
 CARBOHYDRATE_KCAL = 4
+
 
 class TagViewSet(ModelViewSet):
     """
@@ -80,8 +80,10 @@ class UserViewSet(DjoserUserViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=HTTP_201_CREATED, headers=headers)
+        return Response(
+            serializer.data, status=HTTP_201_CREATED,
+            headers=self.get_success_headers(serializer.data)
+        )
 
     def update(self, request, *args, **kwargs):
         """
@@ -91,9 +93,10 @@ class UserViewSet(DjoserUserViewSet):
         pk: идентификатор пользователя
         return: обновленный пользователь
         """
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer = self.get_serializer(
+            self.get_object(), data=request.data,
+            partial=kwargs.pop('partial', False)
+        )
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
@@ -106,8 +109,7 @@ class UserViewSet(DjoserUserViewSet):
         pk: идентификатор пользователя
         return: пустой ответ
         """
-        instance = self.get_object()
-        self.perform_destroy(instance)
+        self.perform_destroy(self.get_object())
         return Response(status=HTTP_204_NO_CONTENT)
 
 
@@ -146,9 +148,8 @@ class RecipeViewSet(ModelViewSet):
         pk: идентификатор рецепта
         return: информация о добавлении рецепта в избранное
         """
-        recipe = self.get_object()
         favorite, created = models.Favorites.objects.get_or_create(
-            user=request.user, recipe=recipe
+            user=request.user, recipe=self.get_object()
         )
         serializer = serializers.FavoritesSerializer(favorite)
         if created:
@@ -171,9 +172,8 @@ class RecipeViewSet(ModelViewSet):
         pk: идентификатор рецепта
         return: информация о добавлении рецепта в список покупок
         """
-        recipe = self.get_object()
         shopping_list, created = models.ShoppingList.objects.get_or_create(
-            user=request.user, recipe=recipe
+            user=request.user, recipe=self.get_object()
         )
         serializer = serializers.ShoppingListSerializer(shopping_list)
         if created:
@@ -252,19 +252,21 @@ class ShoppingListViewSet(ModelViewSet):
         request: запрос
         return: файл со списком покупок
         """
-        shopping_list = models.ShoppingList.objects.filter(user=request.user)
         ingredients = {}
-        for item in shopping_list:
+        for item in models.ShoppingList.objects.filter(user=request.user):
             for ingredient in item.recipe.ingredients.all():
-                name = ingredient.name
-                quantity = item.recipe.recipeingredient_set.get(ingredient=ingredient).amount
-                if name in ingredients:
-                    ingredients[name] += quantity
+                quantity = item.recipe.recipeingredient_set.get(
+                    ingredient=ingredient
+                ).amount
+                if ingredient.name in ingredients:
+                    ingredients[ingredient.name] += quantity
                 else:
-                    ingredients[name] = quantity
+                    ingredients[ingredient.name] = quantity
 
         response = HttpResponse(content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="buy_list.txt"'
+        response['Content-Disposition'] = (
+            'attachment; filename="shopping_list.txt"'
+        )
         for ingredient, quantity in ingredients.items():
             response.write(f'{ingredient} - {quantity}\n')
         return response

@@ -6,7 +6,7 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 class IsAdminOrReadOnly(BasePermission):
     """Класс прав доступа для администратора или только для чтения."""
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, _):
         """
         Метод проверки прав доступа для запроса.
 
@@ -27,7 +27,7 @@ class IsAdminOrReadOnly(BasePermission):
 class IsAdminAuthorOrReadOnly(BasePermission):
     """Класс прав доступа для автора либо администратора."""
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, _):
         """
         Метод проверки прав доступа для запроса.
 
@@ -38,10 +38,12 @@ class IsAdminAuthorOrReadOnly(BasePermission):
         Returns:
             bool: True если запрос разрешен, False иначе
         """
-        return (request.method in SAFE_METHODS
-                or request.user.is_authenticated)
+        return (
+            request.method in SAFE_METHODS
+            or request.user.is_authenticated
+        )
 
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, _, obj):
         """
         Метод проверки прав доступа для объекта.
 
@@ -53,7 +55,9 @@ class IsAdminAuthorOrReadOnly(BasePermission):
         Returns:
             bool: True если запрос разрешен, False иначе
         """
-        return (request.method in SAFE_METHODS
-                or request.user.is_superuser
-                or request.user.is_staff
-                or obj.author == request.user)
+        return (
+            request.method in SAFE_METHODS
+            or request.user.is_superuser
+            or request.user.is_staff
+            or obj.author == request.user
+        )
