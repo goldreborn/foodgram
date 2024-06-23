@@ -22,16 +22,13 @@ from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.transaction import atomic
 
+from .permissions import IsAuthenticatedUser, IsOwnerOrReadOnly
 from .filters import IngredientFilter
 from . import serializers
 from recipes import models
 from users.models import Subscription
 
 User = get_user_model()
-
-PROTEIN_KCAL = 4
-FAT_KCAL = 9
-CARBOHYDRATE_KCAL = 4
 
 
 class TagViewSet(ModelViewSet):
@@ -121,8 +118,8 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     """
     queryset = models.Ingredient.objects.all()
     serializer_class = serializers.IngredientSerializer
-    permission_classes = (AllowAny, )
-    filter_backends = (DjangoFilterBackend, )
+    permission_classes = (AllowAny,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientFilter
     pagination_class = None
 
@@ -137,9 +134,12 @@ class RecipeViewSet(ModelViewSet):
     queryset = models.Recipe.objects.all().order_by('-pub_date')
     serializer_class = serializers.RecipeSerializer
     pagination_class = PageNumberPagination
+    permission_classes = (IsOwnerOrReadOnly,)
 
-    @action(methods=['post'], detail=True)
     @atomic
+    @action(
+        methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
+    )
     def add_to_favorites(self, request, pk):
         """
         Добавление рецепта в избранное.
@@ -162,8 +162,30 @@ class RecipeViewSet(ModelViewSet):
            'data': serializer.data
         })
 
-    @action(methods=['post'], detail=True)
     @atomic
+    @action(
+        methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
+    )
+    def remove_from_favorites(self, request, pk):
+        """
+        Удаление рецепта из избранного.
+
+        request: запрос
+        pk: идентификатор рецепта
+        return: информация об удалении рецепта из избранного
+        """
+        favorite = models.Favorites.objects.filter(
+            user=request.user, recipe=self.get_object()
+        )
+        favorite.delete()
+        return Response({
+           'message': 'Рецепт удален из избранного'
+        }, status=HTTP_204_NO_CONTENT)
+
+    @atomic
+    @action(
+        methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
+    )
     def add_to_shopping_list(self, request, pk):
         """
         Добавление рецепта в список покупок.
@@ -186,6 +208,29 @@ class RecipeViewSet(ModelViewSet):
            'data': serializer.data
         })
 
+    @atomic
+    @action(
+        methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
+    )
+    def remove_from_shopping_list(self, request, pk):
+        """
+        Удаление рецепта из списка покупок.
+
+        request: запрос
+        pk: идентификатор рецепта
+        return: информация об удалении рецепта из списка покупок
+        """
+        shopping_list = models.ShoppingList.objects.filter(
+            user=request.user, recipe=self.get_object()
+        )
+        shopping_list.delete()
+        return Response({
+           'message': 'Рецепт удален из списка покупок'
+        }, status=HTTP_204_NO_CONTENT)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
 
 class FavoritesViewSet(ModelViewSet):
     """
@@ -197,6 +242,7 @@ class FavoritesViewSet(ModelViewSet):
     """
     queryset = models.Favorites.objects.all()
     serializer_class = serializers.FavoritesSerializer
+    permission_classes = (IsAuthenticatedUser,)
 
 
 class SubscriptionViewSet(ModelViewSet):
@@ -209,9 +255,12 @@ class SubscriptionViewSet(ModelViewSet):
     """
     queryset = Subscription.objects.all()
     serializer_class = serializers.SubscriptionSerializer
+    permission_classes = (IsAuthenticatedUser,)
 
-    @action(methods=['post'], detail=True)
     @atomic
+    @action(
+        methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
+    )
     def subscribe(self, request, pk):
         """
         Подписка на автора.
@@ -232,6 +281,27 @@ class SubscriptionViewSet(ModelViewSet):
            'message': f'Вы уже подписаны на {author}'
         })
 
+    @atomic
+    @action(
+        methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
+    )
+    def unsubscribe(self, request, pk):
+        """
+        Отписка от автора.
+
+        request: запрос
+        pk: идентификатор автора
+        return: информация об отписке от автора
+        """
+        author = User.objects.get(pk=pk)
+        subscription = Subscription.objects.filter(
+            user=request.user, author=author
+        )
+        subscription.delete()
+        return Response({
+           'message': f'Вы отписались от {author}'
+        }, status=HTTP_204_NO_CONTENT)
+
 
 class ShoppingListViewSet(ModelViewSet):
     """
@@ -243,6 +313,7 @@ class ShoppingListViewSet(ModelViewSet):
     """
     queryset = models.ShoppingList.objects.all()
     serializer_class = serializers.ShoppingListSerializer
+    permission_classes = (IsAuthenticatedUser,)
 
     @action(methods=['get'], detail=False)
     def download_shopping_list(self, request):

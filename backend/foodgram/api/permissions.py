@@ -1,63 +1,20 @@
-"""Модуль с кастомными правами доступа для REST API."""
-
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import BasePermission
 
 
-class IsAdminOrReadOnly(BasePermission):
-    """Класс прав доступа для администратора или только для чтения."""
+class IsAuthenticatedUser(BasePermission):
+    """
+    Доступ авторизованному пользователю
+    """
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
 
-    def has_permission(self, request, _):
-        """
-        Метод проверки прав доступа для запроса.
 
-        Args:
-            request: запрос
-            view: представление
-
-        Returns:
-            bool: True если запрос разрешен, False иначе
-        """
-        if request.method in ['GET']:
+class IsOwnerOrReadOnly(BasePermission):
+    """
+    Доступ владельца к своему контенту или только чтение
+    """
+    def has_object_permission(self, request, view, obj):
+        if request.method in ('GET', 'HEAD', 'OPTIONS'):
             return True
-        elif request.method in ['POST', 'PUT', 'DELETE']:
-            return request.user.is_staff
-        return False
 
-
-class IsAdminAuthorOrReadOnly(BasePermission):
-    """Класс прав доступа для автора либо администратора."""
-
-    def has_permission(self, request, _):
-        """
-        Метод проверки прав доступа для запроса.
-
-        Args:
-            request: запрос
-            view: представление
-
-        Returns:
-            bool: True если запрос разрешен, False иначе
-        """
-        return (
-            request.method in SAFE_METHODS
-            or request.user.is_authenticated
-        )
-
-    def has_object_permission(self, request, _, obj):
-        """
-        Метод проверки прав доступа для объекта.
-
-        Args:
-            request: запрос
-            view: представление
-            obj: объект
-
-        Returns:
-            bool: True если запрос разрешен, False иначе
-        """
-        return (
-            request.method in SAFE_METHODS
-            or request.user.is_superuser
-            or request.user.is_staff
-            or obj.author == request.user
-        )
+        return obj.owner == request.user
