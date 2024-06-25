@@ -19,6 +19,7 @@ from rest_framework.serializers import (
 from recipes import models
 from users import models as user_models
 
+
 class Base64ImageField(ImageField):
     """
     Поле для хранения изображений в формате Base64.
