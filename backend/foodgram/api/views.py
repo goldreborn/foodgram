@@ -62,12 +62,10 @@ class UserViewSet(DjoserUserViewSet):
 
         return: serializer класс
         """
-        if self.action == 'list' or self.action == 'retrieve':
+        if self.action in ('list', 'retrieve', 'update', 'partial_update',):
             return serializers.UserSerializer
         elif self.action == 'create':
             return serializers.UserCreateSerializer
-        elif self.action == 'update' or self.action == 'partial_update':
-            return serializers.UserSerializer
         return super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
