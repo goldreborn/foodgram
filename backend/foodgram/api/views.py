@@ -11,6 +11,9 @@
 Каждый ViewSet предоставляет набор методов для выполнения операций с данными.
 """
 from django.http import HttpResponse
+from django.contrib.auth import get_user_model
+from django.db.transaction import atomic
+
 from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
@@ -18,15 +21,15 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from djoser.views import UserViewSet as DjoserUserViewSet
-from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.transaction import atomic
+
+from recipes.models import Tag, Recipe, Ingredient, Favorites, ShoppingList
+from users.models import Subscription
 
 from .permissions import IsAuthenticatedUser, IsOwnerOrReadOnly
 from .filters import IngredientFilter
-from . import serializers
-from recipes import models
-from users.models import Subscription
+import serializers
+
 
 User = get_user_model()
 
@@ -38,7 +41,7 @@ class TagViewSet(ModelViewSet):
     Этот класс предоставляет CRUD-операции для тегов рецептов.
     Он использует TagSerializer для сериализации и десериализации тегов.
     """
-    queryset = models.Tag.objects.all()
+    queryset = Tag.objects.all()
     serializer_class = serializers.TagSerializer
     permission_classes = (AllowAny,)
 
@@ -116,7 +119,7 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
     Получение информации о ингредиенте.
     """
-    queryset = models.Ingredient.objects.all()
+    queryset = Ingredient.objects.all()
     serializer_class = serializers.IngredientSerializer
     permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend,)
@@ -131,7 +134,7 @@ class RecipeViewSet(ModelViewSet):
     Этот класс предоставляет CRUD-операции для рецептов.
     Он использует RecipeSerializer для сериализации и десериализации рецептов.
     """
-    queryset = models.Recipe.objects.all().order_by('-pub_date')
+    queryset = Recipe.objects.all().order_by('-pub_date')
     serializer_class = serializers.RecipeSerializer
     pagination_class = PageNumberPagination
     permission_classes = (IsOwnerOrReadOnly,)
@@ -148,19 +151,20 @@ class RecipeViewSet(ModelViewSet):
         pk: идентификатор рецепта
         return: информация о добавлении рецепта в избранное
         """
-        favorite, created = models.Favorites.objects.get_or_create(
+        favorite, created = Favorites.objects.get_or_create(
             user=request.user, recipe=self.get_object()
         )
         serializer = serializers.FavoritesSerializer(favorite)
         if created:
             return Response({
-               'message': 'Рецепт добавлен в избранное',
-               'data': serializer.data
+                'message': 'Рецепт добавлен в избранное',
+                'data': serializer.data
             })
-        return Response({
-           'message': 'Рецепт уже находится в избранном',
-           'data': serializer.data
-        })
+        else:
+            return Response({
+                'message': 'Рецепт уже находится в избранном',
+                'data': serializer.data
+            })
 
     @atomic
     @action(
@@ -174,12 +178,12 @@ class RecipeViewSet(ModelViewSet):
         pk: идентификатор рецепта
         return: информация об удалении рецепта из избранного
         """
-        favorite = models.Favorites.objects.filter(
+        favorite = Favorites.objects.filter(
             user=request.user, recipe=self.get_object()
         )
         favorite.delete()
         return Response({
-           'message': 'Рецепт удален из избранного'
+            'message': 'Рецепт удален из избранного'
         }, status=HTTP_204_NO_CONTENT)
 
     @atomic
@@ -194,19 +198,20 @@ class RecipeViewSet(ModelViewSet):
         pk: идентификатор рецепта
         return: информация о добавлении рецепта в список покупок
         """
-        shopping_list, created = models.ShoppingList.objects.get_or_create(
+        shopping_list, created = ShoppingList.objects.get_or_create(
             user=request.user, recipe=self.get_object()
         )
         serializer = serializers.ShoppingListSerializer(shopping_list)
         if created:
             return Response({
-               'message': 'Рецепт добавлен в список покупок',
-               'data': serializer.data
+                'message': 'Рецепт добавлен в список покупок',
+                'data': serializer.data
             })
-        return Response({
-           'message': 'Рецепт уже находится в списке покупок',
-           'data': serializer.data
-        })
+        else:
+            return Response({
+                'message': 'Рецепт уже находится в списке покупок',
+                'data': serializer.data
+            })
 
     @atomic
     @action(
@@ -220,16 +225,43 @@ class RecipeViewSet(ModelViewSet):
         pk: идентификатор рецепта
         return: информация об удалении рецепта из списка покупок
         """
-        shopping_list = models.ShoppingList.objects.filter(
+        shopping_list = ShoppingList.objects.filter(
             user=request.user, recipe=self.get_object()
         )
         shopping_list.delete()
         return Response({
-           'message': 'Рецепт удален из списка покупок'
+            'message': 'Рецепт удален из списка покупок'
         }, status=HTTP_204_NO_CONTENT)
 
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+    def create(self, request):
+        tags = request.data.get('tags')
+        ingredients = request.data.get('ingredients')
+        image = request.FILES.get('image')
+
+        recipe = Recipe(
+            name=request.data.get('name'),
+            author=request.user,
+            text=request.data.get('text'),
+            cooking_time=request.data.get('cooking_time')
+        )
+        recipe.save()
+
+        for tag in tags:
+            tag_obj, _ = Tag.objects.get_or_create(name=tag)
+            recipe.tags.add(tag_obj)
+
+        for ingredient in ingredients:
+            ingredient_obj, _ = Ingredient.objects.get_or_create(
+                name=ingredient
+            )
+            recipe.ingredients.add(ingredient_obj)
+
+        if image:
+            recipe.image = image
+            recipe.save()
+
+        serializer = serializers.RecipeSerializer(recipe)
+        return Response(serializer.data)
 
 
 class FavoritesViewSet(ModelViewSet):
@@ -240,7 +272,7 @@ class FavoritesViewSet(ModelViewSet):
     Он использует FavoritesSerializer для сериализации
     и десериализации избранного.
     """
-    queryset = models.Favorites.objects.all()
+    queryset = Favorites.objects.all()
     serializer_class = serializers.FavoritesSerializer
     permission_classes = (IsAuthenticatedUser,)
 
@@ -275,11 +307,12 @@ class SubscriptionViewSet(ModelViewSet):
         )
         if created:
             return Response({
-               'message': f'Вы подписались на {author}'
+                'message': f'Вы подписались на {author}'
             })
-        return Response({
-           'message': f'Вы уже подписаны на {author}'
-        })
+        else:
+            return Response({
+                'message': f'Вы уже подписаны на {author}'
+            })
 
     @atomic
     @action(
@@ -311,7 +344,7 @@ class ShoppingListViewSet(ModelViewSet):
     Он использует ShoppingListSerializer для сериализации
     и десериализации списка покупок.
     """
-    queryset = models.ShoppingList.objects.all()
+    queryset = ShoppingList.objects.all()
     serializer_class = serializers.ShoppingListSerializer
     permission_classes = (IsAuthenticatedUser,)
 
@@ -324,7 +357,7 @@ class ShoppingListViewSet(ModelViewSet):
         return: файл со списком покупок
         """
         ingredients = {}
-        for item in models.ShoppingList.objects.filter(user=request.user):
+        for item in ShoppingList.objects.filter(user=request.user):
             for ingredient in item.recipe.ingredients.all():
                 quantity = item.recipe.recipeingredient_set.get(
                     ingredient=ingredient

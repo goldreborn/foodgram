@@ -1,5 +1,6 @@
-from django_filters import FilterSet, CharFilter
 from django.utils.encoding import force_str
+
+from django_filters import FilterSet, CharFilter
 
 from recipes.models import Ingredient
 

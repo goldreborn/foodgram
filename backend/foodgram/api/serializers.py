@@ -12,13 +12,14 @@ import base64
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
+
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework.serializers import (
-    ModelSerializer, StringRelatedField, ImageField, PrimaryKeyRelatedField
+    ImageField, ModelSerializer, PrimaryKeyRelatedField, StringRelatedField
 )
 
 from recipes import models
-from users import models as user_models
+from users import user_models
 
 User = get_user_model()
 
@@ -53,7 +54,6 @@ class TagSerializer(ModelSerializer):
         """Мета-класс сериализатора тега."""
         model = models.Tag
         fields = '__all__'
-        read_only_fields = ('id',)
 
 
 class IngredientSerializer(ModelSerializer):
