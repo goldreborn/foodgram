@@ -9,7 +9,7 @@ on:
 jobs:
     test:
         runs-on: ubuntu-latest
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master'
 
         steps:
         - uses: actions/checkout@v2
@@ -31,7 +31,7 @@ jobs:
           name: Push Docker image to Docker Hub
           runs-on: ubuntu-latest
           needs: test
-          if: github.ref == 'refs/heads/main'
+          if: github.ref == 'refs/heads/master'
           steps:
           - name: Check out the repo
             uses: actions/checkout@v2
@@ -54,50 +54,44 @@ jobs:
     deploy:
       runs-on: ubuntu-latest
       needs: build_and_push_to_docker_hub
-      if: github.ref == 'refs/heads/main'
+      if: github.ref == 'refs/heads/master'
       steps:
-          - name: executing remote ssh commands to deploy
-            uses: appleboy/ssh-action@master
-            with:
-               host: ${{ secrets.HOST }}
-               username: ${{ secrets.USER }}
-               key: ${{ secrets.SSH_KEY }}
-               passphrase: ${{ secrets.PASSPHRASE }}
-               stack_file_name: docker-compose.yaml
-               script: |
-                  # sudo docker pull ${{ secrets.DOCKER_FRONTEND }}
-                  sudo docker pull ${{ secrets.DOCKER_BACKEND }}
-                  sudo docker-compose stop
-                  sudo docker-compose rm backend
-                  # sudo docker-compose down -v
-                  touch .env
-                  echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
-                  echo DB_NAME=${{ secrets.DB_NAME }} >> .env
-                  echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} >> .env
-                  echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> .env
-                  echo DB_HOST=${{ secrets.DB_HOST }} >> .env
-                  echo DB_PORT=${{ secrets.DB_PORT }} >> .env
-                  # sudo docker-compose up -d --build
-                  sudo docker-compose up -d
-                  sudo docker-compose exec -it backend python manage.py makemigrations users
-                  sudo docker-compose exec -it backend python manage.py makemigrations tags
-                  sudo docker-compose exec -it backend python manage.py makemigrations recipes
-                  sudo docker-compose exec -it backend python manage.py migrate --noinput
-                  sudo docker-compose exec -it backend python manage.py collectstatic --no-input
-  send-message:
-    runs-on: ubuntu-latest
-    needs: deploy
-    steps:
-      - name: Send message
-        uses: appleboy/telegram-action@master
+      - name: executing remote ssh commands to deploy
+        uses: appleboy/ssh-action@master
         with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            Деплой foodgram завершен.
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }} 
+          script: |
+            cd foodgram/infra
+            sudo docker pull ${{ secrets.DOCKER_BACKEND }}
+            sudo docker pull ${{ secrets.DOCKER_FRONTEND }}
+            sudo docker-compose stop
+            sudo docker-compose rm backend
+            rm .env
+            touch .env
+            echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
+            echo DB_NAME=${{ secrets.DB_NAME }} >> .env
+            echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} >> .env
+            echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> .env
+            echo DB_HOST=${{ secrets.DB_HOST }} >> .env
+            echo DB_PORT=${{ secrets.DB_PORT }} >> .env
+            sudo docker-compose up -d
+    send-message:
+      runs-on: ubuntu-latest
+      needs: deploy
+      steps:
+        - name: Send message
+          uses: appleboy/telegram-action@master
+          with:
+            to: ${{ secrets.TELEGRAM_TO }}
+            token: ${{ secrets.TELEGRAM_TOKEN }}
+            message: |
+              Деплой foodgram завершен.
 
-            author: ${{ github.actor }}
+              author: ${{ github.actor }}
 
-            message: ${{ github.event.head_commit.message }}
+              message: ${{ github.event.head_commit.message }}
 
-            link: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+              link: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
