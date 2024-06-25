@@ -63,7 +63,8 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd foodgram
-            sudo docker pull ${{ secrets.DOCKER_BACKEND }}
+            sudo docker-compose down
+            sudo docker pull 
             sudo docker-compose stop
             sudo docker-compose rm backend
             rm .env
