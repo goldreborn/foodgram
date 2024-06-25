@@ -28,7 +28,7 @@ from users.models import Subscription
 
 from .permissions import IsAuthenticatedUser, IsOwnerOrReadOnly
 from .filters import IngredientFilter
-import serializers
+from . import serializers
 
 
 User = get_user_model()
