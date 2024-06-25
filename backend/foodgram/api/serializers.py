@@ -12,7 +12,6 @@ import base64
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
-
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework.serializers import (
     ImageField, ModelSerializer, PrimaryKeyRelatedField, StringRelatedField
