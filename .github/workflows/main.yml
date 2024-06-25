@@ -32,7 +32,7 @@ jobs:
     steps:
       - name: Build and push to Docker Hub
         run: |
-          docker build -t ${{ secrets.DOCKER_BACKEND }} backend/.
+          docker build -t ${{ secrets.DOCKER_BACKEND }} backend
           docker push ${{ secrets.DOCKER_BACKEND }}
 
   deploy:
