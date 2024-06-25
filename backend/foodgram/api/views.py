@@ -62,11 +62,9 @@ class UserViewSet(DjoserUserViewSet):
 
         return: serializer класс
         """
-        if self.action in ('list', 'retrieve', 'update', 'partial_update',):
+        if self.action in ('list','retrieve', 'update', 'partial_update'):
             return serializers.UserSerializer
-        elif self.action == 'create':
-            return serializers.UserCreateSerializer
-        return super().get_serializer_class()
+        return serializers.UserCreateSerializer if self.action == 'create' else super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
         """
@@ -330,7 +328,7 @@ class SubscriptionViewSet(ModelViewSet):
         )
         subscription.delete()
         return Response({
-           'message': f'Вы отписались от {author}'
+            'message': f'Вы отписались от {author}'
         }, status=HTTP_204_NO_CONTENT)
 
 

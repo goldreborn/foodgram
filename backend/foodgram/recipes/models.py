@@ -239,8 +239,8 @@ class Favorites(models.Model):
         constraints = (
             models.UniqueConstraint(
                 fields=(
-                   'recipe',
-                   'user',
+                    'recipe',
+                    'user',
                 ),
                 name='Рецепт уже добавлен в избранное',
             ),

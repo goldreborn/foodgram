@@ -96,9 +96,11 @@ class User(AbstractUser):
                          'из букв кириллицы'),
             )
         ])
-    
+
     groups = models.ManyToManyField(Group, related_name='custom_user_groups')
-    user_permissions = models.ManyToManyField(Permission, related_name='custom_user_permissions')
+    user_permissions = models.ManyToManyField(
+        Permission, related_name='custom_user_permissions'
+    )
 
     class Meta:
         """Мета-класс модели кастомного пользователя."""
