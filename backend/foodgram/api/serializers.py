@@ -11,17 +11,13 @@ import base64
 
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
-from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework.serializers import (
-    ImageField, ModelSerializer, PrimaryKeyRelatedField, StringRelatedField
+    ModelSerializer, StringRelatedField, ImageField, PrimaryKeyRelatedField
 )
 
 from recipes import models
-from users import user_models
-
-User = get_user_model()
-
+from users import models as user_models
 
 class Base64ImageField(ImageField):
     """
