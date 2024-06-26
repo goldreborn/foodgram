@@ -13,7 +13,8 @@ from django.core.validators import (
 from django.db import models
 from PIL import Image
 
-User = get_user_model()
+from users.models import User
+
 
 TAG_MAX_LENGTH = 255
 INGREDIENT_MAX_UNITS = 255
@@ -46,13 +47,11 @@ class Tag(models.Model):
         verbose_name='Цвет',
         max_length=15,
         unique=True,
-        db_index=False,
     )
     slug = models.CharField(
         verbose_name='слаг',
         max_length=255,
         unique=True,
-        db_index=False,
     )
 
     class Meta:
@@ -112,25 +111,20 @@ class Recipe(models.Model):
 
     name = models.CharField(
         verbose_name='Рецепт',
-        max_length=255,
-        null=False
+        max_length=255
     )
     author = models.ForeignKey(
         verbose_name='Автор',
         related_name='recipes',
         to=User,
-        on_delete=models.CASCADE,
-        null=True
+        on_delete=models.CASCADE
     )
     tags = models.ManyToManyField(
         verbose_name='Теги',
-        related_name='recipes',
-        db_index=True,
         to=Tag,
     )
     ingredients = models.ManyToManyField(
         verbose_name='Ингредиенты',
-        related_name='ingredients',
         to=Ingredient,
         through='RecipeIngredient',
     )
