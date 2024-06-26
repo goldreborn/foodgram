@@ -4,7 +4,6 @@
 В этом модуле определены модели для тегов, пользователей,
 рецептов, избранного, подписок и списка покупок.
 """
-from django.contrib.auth import get_user_model
 from django.core.validators import (
     MaxLengthValidator, MinValueValidator,
     RegexValidator, FileExtensionValidator
