@@ -64,10 +64,8 @@ jobs:
           script: |
             cd foodgram
             sudo docker-compose down
-            sudo docker-compose pull 
-            sudo docker-compose rm backend
-            rm .env
-            touch .env
+            sudo docker system prune -af
+            sudo docker-compose pull
             echo SECRET_KEY='${{ secrets.SECRET_KEY }}' >> .env  
             echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env 
             echo DB_NAME=${{ secrets.DB_NAME }} >> .env 
