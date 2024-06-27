@@ -37,7 +37,7 @@ class SubscriptionSerializer(UserSerializer):
         model = User
         fields = ('__all__')
 
-    def get_recipes_count(obj):
+    def get_recipes_count(self, obj):
         return obj.recipes.count()
 
     def validate(self, data):

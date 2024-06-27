@@ -5,7 +5,7 @@
 """
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
-from django.core.validators import RegexValidator, FileExtensionValidator
+from django.core.validators import RegexValidator
 from django.contrib.auth.models import Group, Permission
 
 
@@ -98,19 +98,9 @@ class User(AbstractBaseUser):
         ])
 
     groups = models.ManyToManyField(Group, related_name='custom_user_groups')
-    
+
     user_permissions = models.ManyToManyField(
         Permission, related_name='custom_user_permissions'
-    )
-
-    avatar_image = models.ImageField(
-        verbose_name='Аватар',
-        upload_to='avatar_image/',
-        blank=True,
-        null=True,
-        validators=[
-            FileExtensionValidator(['png', 'jpg', 'jpeg'])
-        ]
     )
 
     class Meta:

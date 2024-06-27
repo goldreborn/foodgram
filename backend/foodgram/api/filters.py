@@ -1,5 +1,7 @@
 from django.utils.encoding import force_str
-from django_filters import FilterSet, ModelMultipleChoiceFilter, BooleanFilter, CharFilter
+from django_filters import (
+    FilterSet, ModelMultipleChoiceFilter, BooleanFilter, CharFilter
+)
 
 from recipes.models import Ingredient, Tag, Recipe
 
