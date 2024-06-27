@@ -6,19 +6,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 
-from users.models import User, Subscription
-from serializers import UserSerializer, SubscriptionSerializer
+from .models import CustomUser, Subscription
+from .serializers import CustomUserSerializer, SubscriptionSerializer
 
 
-class UserViewSet(DjoserUserViewSet):
+class CustomUserViewSet(DjoserUserViewSet):
     """
     ViewSet для пользователей.
 
     Этот класс предоставляет CRUD-операции для пользователей.
     Он использует UserSerializer для сериализации и десериализации юзеров.
     """
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+    queryset = CustomUser.objects.all()
+    serializer_class = CustomUserSerializer
     permission_classes = (IsAuthenticated,)
 
 
@@ -42,7 +42,7 @@ class SubscriptionViewSet(APIView):
         """
         Подписка на автора.
         """
-        author = User.objects.get(pk=pk)
+        author = CustomUser.objects.get(pk=pk)
         _, created = Subscription.objects.get_or_create(
             user=request.user, author=author
         )
@@ -62,7 +62,7 @@ class SubscriptionViewSet(APIView):
         """
         Отписка от автора.
         """
-        author = User.objects.get(pk=pk)
+        author = CustomUser.objects.get(pk=pk)
         subscription = Subscription.objects.filter(
             user=request.user, author=author
         )

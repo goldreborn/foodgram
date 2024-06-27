@@ -3,6 +3,7 @@ from django.urls import path, include
 from rest_framework import routers
 
 from api import views
+from users.views import SubscriptionViewSet
 
 app_name = 'api'
 
@@ -21,13 +22,8 @@ router_v1.register(
 
 urlpatterns = [
     path(
-        'users/<pk>/avatar/',
-        views.update_avatar,
-        name='update_avatar'
-    ),
-    path(
         'users/subscriptions/',
-        views.SubscriptionViewSet.as_view({'get': 'list'})
+        SubscriptionViewSet.as_view()
     ),
     path('', include(router_v1.urls)),
     path('', include('djoser.urls')),

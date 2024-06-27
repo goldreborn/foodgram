@@ -12,7 +12,7 @@ from django.core.validators import (
 from django.db import models
 from PIL import Image
 
-from users.models import User
+from users.models import CustomUser
 
 
 TAG_MAX_LENGTH = 255
@@ -115,7 +115,7 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         verbose_name='Автор',
         related_name='recipes',
-        to=User,
+        to=CustomUser,
         on_delete=models.CASCADE
     )
     tags = models.ManyToManyField(
@@ -217,7 +217,7 @@ class Favorites(models.Model):
     user = models.ForeignKey(
         verbose_name='Пользователь',
         related_name='favorites',
-        to=User,
+        to=CustomUser,
         on_delete=models.CASCADE,
     )
     date_added = models.DateTimeField(
@@ -264,7 +264,7 @@ class ShoppingList(models.Model):
     user = models.ForeignKey(
         verbose_name='Владелец списка',
         related_name='carts',
-        to=User,
+        to=CustomUser,
         on_delete=models.CASCADE,
     )
     date_added = models.DateTimeField(

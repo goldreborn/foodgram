@@ -14,7 +14,7 @@ from rest_framework.serializers import (
 
 from recipes import models
 from users import models as user_models
-from utils import Base64ImageField
+from .utils import Base64ImageField
 
 
 class TagSerializer(ModelSerializer):

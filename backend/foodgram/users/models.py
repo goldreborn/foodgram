@@ -1,10 +1,5 @@
-"""
-Модуль для работы с кастомной моделью пользователя.
-
-и моделью подписки на авторов.
-"""
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser
+from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.core.validators import RegexValidator
 from django.contrib.auth.models import Group, Permission
 
@@ -18,7 +13,7 @@ MAX_PASSWORD_LENGTH = 50
 MAX_EMAIL_LENGTH = 50
 
 
-class User(AbstractBaseUser):
+class CustomUser(AbstractUser, PermissionsMixin):
     """
     Класс User - это пользовательская модель.
 
@@ -34,6 +29,8 @@ class User(AbstractBaseUser):
         которое может состоять только из букв кириллицы.
     * last_name: строка, фамилия пользователя,
         которая может состоять только из букв кириллицы.
+    * phone: строка, номер телефона пользователя,
+        который должен соответствовать стандартному формату телефона.
 
     Методы:
 
@@ -97,11 +94,23 @@ class User(AbstractBaseUser):
             )
         ])
 
+    phone = models.CharField(
+        max_length=MAX_PHONE_LENGTH,
+        validators=[
+            RegexValidator(
+                regex=r'^\+?\d{1,3}?[-.]?\(?(?:\d{2,3})\)?[-.]?\d\d\d[-.]?\d\d\d\d$',
+                message='Неверный формат телефона',
+            )
+        ])
+
     groups = models.ManyToManyField(Group, related_name='custom_user_groups')
 
     user_permissions = models.ManyToManyField(
         Permission, related_name='custom_user_permissions'
     )
+
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
 
     class Meta:
         """Мета-класс модели кастомного пользователя."""
@@ -109,6 +118,7 @@ class User(AbstractBaseUser):
         ordering = ['id']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        unique_together = (('first_name', 'last_name'),)
 
     def get_permissions(self):
         return self.user_permissions
@@ -148,12 +158,12 @@ class Subscription(models.Model):
     """
 
     user = models.ForeignKey(
-        to=User,
+        to=CustomUser,
         on_delete=models.CASCADE,
         related_name='subscriber'
     )
     author = models.ForeignKey(
-        to=User,
+        to=CustomUser,
         on_delete=models.CASCADE,
         related_name='subscribed_to'
     )

@@ -1,10 +1,10 @@
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework.serializers import SerializerMethodField, ValidationError
 
-from users.models import User, Follow
+from .models import CustomUser, Subscription
 
 
-class UserExamplerSerializer(UserSerializer):
+class CustomUserSerializer(UserSerializer):
     """
     Сериализатор для модели User.
 
@@ -14,7 +14,7 @@ class UserExamplerSerializer(UserSerializer):
     is_subscribed = SerializerMethodField(read_only=True)
 
     class Meta:
-        model = User
+        model = CustomUser
         fields = (
             'id', 'email', 'username', 'first_name', 'last_name', 'subscribed'
         )
@@ -23,7 +23,7 @@ class UserExamplerSerializer(UserSerializer):
         user = self.context.get('request').user
         if user.is_anonymous:
             return False
-        return Follow.objects.filter(user=user, author=obj.id).exists()
+        return Subscription.objects.filter(user=user, author=obj.id).exists()
 
 
 class SubscriptionSerializer(UserSerializer):
@@ -34,7 +34,7 @@ class SubscriptionSerializer(UserSerializer):
     recipes_count = SerializerMethodField(read_only=True)
 
     class Meta:
-        model = User
+        model = CustomUser
         fields = ('__all__')
 
     def get_recipes_count(self, obj):
@@ -58,13 +58,7 @@ class UserSignUpSerializer(UserCreateSerializer):
 
     class Meta:
         """Мета-класс сериализатора который создает нового пользователя."""
-        model = User
+        model = CustomUser
         fields = (
             'id', 'email', 'username', 'first_name', 'last_name', 'password',
         )
-
-    def create(self, validated_data):
-        user = User.objects.create(**validated_data)
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
