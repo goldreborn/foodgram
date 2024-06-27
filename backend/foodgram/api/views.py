@@ -21,8 +21,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 
 from recipes.models import Tag, Recipe, Ingredient, Favorites, ShoppingList
-from permissions import IsOwnerOrReadOnly, IsAuthenticatedUser
-from filters import IngredientFilter, RecipeFilter
+from .permissions import IsOwnerOrReadOnly, IsAuthenticatedUser
+from .filters import IngredientFilter, RecipeFilter
 from . import serializers
 
 
