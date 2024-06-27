@@ -109,7 +109,7 @@ class User(AbstractBaseUser):
         ordering = ['id']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-    
+
     def get_permissions(self):
         return self.user_permissions
 
