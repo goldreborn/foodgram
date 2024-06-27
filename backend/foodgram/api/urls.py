@@ -7,8 +7,10 @@ from api import views
 app_name = 'api'
 
 router_v1 = routers.DefaultRouter()
-router_v1.register(r'recipes', views.RecipeViewSet)
-router_v1.register(r'tags', views.TagViewSet)
+router_v1.register(
+    r'recipes', views.RecipeViewSet, basename='recipes'
+)
+router_v1.register(r'tags', views.TagViewSet, basename='tags')
 router_v1.register(
     r'ingredients', views.IngredientViewSet, basename='ingredients'
 )
@@ -18,6 +20,11 @@ router_v1.register(
 )
 
 urlpatterns = [
+    path(
+        'users/<pk>/avatar/',
+        views.update_avatar,
+        name='update_avatar'
+    ),
     path(
         'users/subscriptions/',
         views.SubscriptionViewSet.as_view({'get': 'list'})

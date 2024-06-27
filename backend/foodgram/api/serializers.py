@@ -7,36 +7,14 @@
 Сериализаторы используются для преобразования данных в формат,
 подходящий для передачи по сети или хранения в базе данных.
 """
-import base64
-
 from django.core.exceptions import ValidationError
-from django.core.files.base import ContentFile
-from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework.serializers import (
-    ModelSerializer, StringRelatedField, ImageField, PrimaryKeyRelatedField
+    ModelSerializer, StringRelatedField, PrimaryKeyRelatedField
 )
 
 from recipes import models
 from users import models as user_models
-
-
-class Base64ImageField(ImageField):
-    """
-    Поле для хранения изображений в формате Base64.
-
-    Это поле позволяет хранить изображения в формате Base64,
-    что полезно для передачи изображений через API.
-    """
-
-    def to_internal_value(self, data):
-        """Метод to_internal_value преобразует строку Base64 в файл."""
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-
-        return super().to_internal_value(data)
+from utils import Base64ImageField
 
 
 class TagSerializer(ModelSerializer):
@@ -50,6 +28,7 @@ class TagSerializer(ModelSerializer):
         """Мета-класс сериализатора тега."""
         model = models.Tag
         fields = '__all__'
+        read_only_fields = '__all__'
 
 
 class IngredientSerializer(ModelSerializer):
@@ -234,31 +213,3 @@ class FavoritesSerializer(ModelSerializer):
         if models.Favorites.objects.filter(recipe=recipe, user=user).exists():
             raise ValidationError('Рецепт уже добавлен в избранное')
         return super().create(validated_data)
-
-
-class UserGetSerializer(UserSerializer):
-    """
-    Сериализатор для модели User.
-
-    Используется для преобразования данных модели User в формат JSON.
-    """
-
-    class Meta:
-        """Мета-класс сериализатора пользователя."""
-        model = user_models.User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name',)
-
-
-class UserSignUpSerializer(UserCreateSerializer):
-    """
-    Сериализатор для создания нового пользователя.
-
-    Используется для преобразования данных модели User в формат JSON.
-    """
-
-    class Meta:
-        """Мета-класс сериализатора который создает нового пользователя."""
-        model = user_models.User
-        fields = (
-            'id', 'email', 'username', 'first_name', 'last_name', 'password',
-        )

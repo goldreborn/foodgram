@@ -34,7 +34,7 @@ class IngredientAdmin(ModelAdmin):
 class RecipeAdmin(ModelAdmin):
     """Класс администрирования для рецептов."""
 
-    list_display = ('pk', 'name', 'author', 'favorites_amount', 'ingredients')
+    list_display = ('pk', 'name', 'author', 'favorites_amount')
     search_fields = ('name', 'author', 'ingredients')
     list_filter = ('name', 'author', 'tags')
     empty_value_display = settings.EMPTY_VALUE
@@ -47,6 +47,12 @@ class RecipeAdmin(ModelAdmin):
         return: количество добавлений в избранное
         """
         return obj.favorites.count()
+
+
+@register(models.RecipeIngredient)
+class RecipeIngredientAdmin(ModelAdmin):
+    list_display = ('pk', 'recipe', 'ingredients', 'amount')
+    empty_value_display = settings.EMPTY_VALUE
 
 
 @register(models.Favorites)

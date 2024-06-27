@@ -4,8 +4,8 @@
 и моделью подписки на авторов.
 """
 from django.db import models
-from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
+from django.contrib.auth.models import AbstractBaseUser
+from django.core.validators import RegexValidator, FileExtensionValidator
 from django.contrib.auth.models import Group, Permission
 
 
@@ -18,7 +18,7 @@ MAX_PASSWORD_LENGTH = 50
 MAX_EMAIL_LENGTH = 50
 
 
-class User(AbstractUser):
+class User(AbstractBaseUser):
     """
     Класс User - это пользовательская модель.
 
@@ -98,8 +98,19 @@ class User(AbstractUser):
         ])
 
     groups = models.ManyToManyField(Group, related_name='custom_user_groups')
+    
     user_permissions = models.ManyToManyField(
         Permission, related_name='custom_user_permissions'
+    )
+
+    avatar_image = models.ImageField(
+        verbose_name='Аватар',
+        upload_to='avatar_image/',
+        blank=True,
+        null=True,
+        validators=[
+            FileExtensionValidator(['png', 'jpg', 'jpeg'])
+        ]
     )
 
     class Meta:
@@ -108,6 +119,9 @@ class User(AbstractUser):
         ordering = ['id']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+    
+    def get_permissions(self):
+        return self.user_permissions
 
     def __str__(self):
         """Строковое представление кастомного пользователя."""
@@ -146,15 +160,12 @@ class Subscription(models.Model):
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
-        related_name='subscriptions'
+        related_name='subscriber'
     )
     author = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
-        related_name='subscribers'
-    )
-    subscribed_at = models.DateTimeField(
-        auto_now_add=True
+        related_name='subscribed_to'
     )
 
     class Meta:
