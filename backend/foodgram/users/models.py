@@ -94,15 +94,6 @@ class CustomUser(AbstractUser, PermissionsMixin):
             )
         ])
 
-    phone = models.CharField(
-        max_length=MAX_PHONE_LENGTH,
-        validators=[
-            RegexValidator(
-                regex=r'^\+?\d{1,3}?[-.]?\(?(?:\d{2,3})\)?[-.]?\d\d\d[-.]?\d\d\d\d$',
-                message='Неверный формат телефона',
-            )
-        ])
-
     groups = models.ManyToManyField(Group, related_name='custom_user_groups')
 
     user_permissions = models.ManyToManyField(
