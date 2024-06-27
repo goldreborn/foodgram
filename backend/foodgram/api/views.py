@@ -11,7 +11,6 @@
 Каждый ViewSet предоставляет набор методов для выполнения операций с данными.
 """
 from django.http import HttpResponse
-from django.contrib.auth import get_user_model
 from django.db.transaction import atomic
 
 from rest_framework.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
@@ -27,11 +26,9 @@ from recipes.models import Tag, Recipe, Ingredient, Favorites, ShoppingList
 from users.models import Subscription
 
 from .permissions import IsAuthenticatedUser, IsOwnerOrReadOnly
-from .filters import IngredientFilter
+from .filters import IngredientFilter, RecipeFilter
 from . import serializers
-
-
-User = get_user_model()
+from users.models import User
 
 
 class TagViewSet(ModelViewSet):
@@ -136,6 +133,7 @@ class RecipeViewSet(ModelViewSet):
     serializer_class = serializers.RecipeSerializer
     pagination_class = PageNumberPagination
     permission_classes = (IsOwnerOrReadOnly,)
+    filter_backends = RecipeFilter
 
     @atomic
     @action(

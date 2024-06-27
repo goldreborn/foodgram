@@ -5,13 +5,13 @@
 ингредиентов, рецептов, избранного и списка покупок.
 """
 from django.conf import settings
-from django.contrib import admin
+from django.contrib.admin import ModelAdmin, register
 
 from recipes import models
 
 
-@admin.register(models.Tag)
-class TagAdmin(admin.ModelAdmin):
+@register(models.Tag)
+class TagAdmin(ModelAdmin):
     """Класс администрирования для тегов."""
 
     list_display = ('pk', 'name', 'color', 'slug')
@@ -20,8 +20,8 @@ class TagAdmin(admin.ModelAdmin):
     empty_value_display = settings.EMPTY_VALUE
 
 
-@admin.register(models.Ingredient)
-class IngredientAdmin(admin.ModelAdmin):
+@register(models.Ingredient)
+class IngredientAdmin(ModelAdmin):
     """Класс администрирования для ингредиентов."""
 
     list_display = ('pk', 'name', 'measurement_unit')
@@ -30,12 +30,12 @@ class IngredientAdmin(admin.ModelAdmin):
     empty_value_display = settings.EMPTY_VALUE
 
 
-@admin.register(models.Recipe)
-class RecipeAdmin(admin.ModelAdmin):
+@register(models.Recipe)
+class RecipeAdmin(ModelAdmin):
     """Класс администрирования для рецептов."""
 
-    list_display = ('pk', 'name', 'author', 'favorites_amount')
-    search_fields = ('name', 'author')
+    list_display = ('pk', 'name', 'author', 'favorites_amount', 'ingredients')
+    search_fields = ('name', 'author', 'ingredients')
     list_filter = ('name', 'author', 'tags')
     empty_value_display = settings.EMPTY_VALUE
 
@@ -49,8 +49,8 @@ class RecipeAdmin(admin.ModelAdmin):
         return obj.favorites.count()
 
 
-@admin.register(models.Favorites)
-class FavoriteAdmin(admin.ModelAdmin):
+@register(models.Favorites)
+class FavoriteAdmin(ModelAdmin):
     """Класс администрирования для избранного."""
 
     list_display = ('pk', 'user', 'recipe')
@@ -58,8 +58,8 @@ class FavoriteAdmin(admin.ModelAdmin):
     empty_value_display = settings.EMPTY_VALUE
 
 
-@admin.register(models.ShoppingList)
-class ShoppingCartAdmin(admin.ModelAdmin):
+@register(models.ShoppingList)
+class ShoppingCartAdmin(ModelAdmin):
     """Класс администрирования для списка покупок."""
 
     list_display = ('pk', 'user', 'recipe')

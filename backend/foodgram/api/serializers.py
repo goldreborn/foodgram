@@ -93,10 +93,6 @@ class RecipeSerializer(ModelSerializer):
             raise ValidationError(
                 {'cooking_time': 'Время приготовления не может быть меньше 0'}
             )
-        if data.get('total_calories') < 0:
-            raise ValidationError(
-                {'total_calories': 'Калорийность не может быть отрицательной'}
-            )
         return data
 
     def to_representation(self, instance):
