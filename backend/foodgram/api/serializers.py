@@ -55,8 +55,9 @@ class UserSerializer(djoser_serializers.UserSerializer):
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         return (
-            request.user.is_authenticated and
-            Subscription.objects.filter(user=request.user, author=obj).exists()
+            request.user.is_authenticated and Subscription.objects.filter(
+                user=request.user, author=obj
+            ).exists()
         )
 
 
@@ -193,8 +194,8 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
-        return (request and request.user.is_authenticated and
-                models.Favorite.objects.filter(
+        auth = request.user.is_authenticated
+        return (request and auth and models.Favorite.objects.filter(
                     user=request.user, recipe=obj
                 ).exists())
 
