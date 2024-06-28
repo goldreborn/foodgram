@@ -4,40 +4,39 @@
 В этом модуле определены классы администрирования для тегов,
 ингредиентов, рецептов, избранного и списка покупок.
 """
-from django.conf import settings
-from django.contrib.admin import ModelAdmin, register
+from django.contrib import admin
 
 from recipes import models
 
 
-@register(models.Tag)
-class TagAdmin(ModelAdmin):
+class RecipeIngredientInline(admin.TabularInline):
+    model = models.RecipeIngredient
+    extra = 1
+
+
+class TagAdmin(admin.ModelAdmin):
     """Класс администрирования для тегов."""
 
     list_display = ('pk', 'name', 'color', 'slug')
     search_fields = ('name', 'color', 'slug')
     list_filter = ('name', 'color', 'slug')
-    empty_value_display = settings.EMPTY_VALUE
 
 
-@register(models.Ingredient)
-class IngredientAdmin(ModelAdmin):
+class IngredientAdmin(admin.ModelAdmin):
     """Класс администрирования для ингредиентов."""
 
     list_display = ('pk', 'name', 'measurement_unit')
     search_fields = ('name',)
     list_filter = ('name',)
-    empty_value_display = settings.EMPTY_VALUE
 
 
-@register(models.Recipe)
-class RecipeAdmin(ModelAdmin):
+class RecipeAdmin(admin.ModelAdmin):
     """Класс администрирования для рецептов."""
 
     list_display = ('pk', 'name', 'author', 'favorites_amount')
     search_fields = ('name', 'author', 'ingredients')
     list_filter = ('name', 'author', 'tags')
-    empty_value_display = settings.EMPTY_VALUE
+    inlines = [RecipeIngredientInline]
 
     def favorites_amount(self, obj):
         """
@@ -49,25 +48,27 @@ class RecipeAdmin(ModelAdmin):
         return obj.favorites.count()
 
 
-@register(models.RecipeIngredient)
-class RecipeIngredientAdmin(ModelAdmin):
-    list_display = ('pk', 'recipe', 'ingredients', 'amount')
-    empty_value_display = settings.EMPTY_VALUE
+class RecipeIngredientAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'recipe', 'ingredient', 'amount')
 
 
-@register(models.Favorites)
-class FavoriteAdmin(ModelAdmin):
+class FavoriteAdmin(admin.ModelAdmin):
     """Класс администрирования для избранного."""
 
     list_display = ('pk', 'user', 'recipe')
     search_fields = ('user', 'recipe')
-    empty_value_display = settings.EMPTY_VALUE
 
 
-@register(models.ShoppingList)
-class ShoppingCartAdmin(ModelAdmin):
+class ShoppingCartAdmin(admin.ModelAdmin):
     """Класс администрирования для списка покупок."""
 
     list_display = ('pk', 'user', 'recipe')
     search_fields = ('user', 'recipe')
-    empty_value_display = settings.EMPTY_VALUE
+
+
+admin.site.register(models.Tag, TagAdmin)
+admin.site.register(models.Ingredient, IngredientAdmin)
+admin.site.register(models.Recipe, RecipeAdmin)
+admin.site.register(models.RecipeIngredient, RecipeIngredientAdmin)
+admin.site.register(models.Favorite, FavoriteAdmin)
+admin.site.register(models.ShoppingList, ShoppingCartAdmin)

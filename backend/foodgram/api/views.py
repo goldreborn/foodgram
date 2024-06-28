@@ -20,20 +20,20 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 
-from recipes.models import Tag, Recipe, Ingredient, Favorites, ShoppingList
+from recipes import models
 from .permissions import IsOwnerOrReadOnly, IsAuthenticatedUser
 from .filters import IngredientFilter, RecipeFilter
 from . import serializers
 
 
-class TagViewSet(ModelViewSet):
+class TagViewSet(ReadOnlyModelViewSet):
     """
     ViewSet для тегов рецептов.
 
-    Этот класс предоставляет CRUD-операции для тегов рецептов.
+    Этот класс предоставляет операции чтения для тегов рецептов.
     Он использует TagSerializer для сериализации и десериализации тегов.
     """
-    queryset = Tag.objects.all()
+    queryset = models.Tag.objects.all()
     serializer_class = serializers.TagSerializer
     permission_classes = (AllowAny,)
 
@@ -42,9 +42,9 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     """
     ViewSet для ингредиентов.
 
-    Получение информации о ингредиенте.
+    Получение информации об ингредиентах.
     """
-    queryset = Ingredient.objects.all()
+    queryset = models.Ingredient.objects.all()
     serializer_class = serializers.IngredientSerializer
     permission_classes = (AllowAny,)
     filter_backends = (DjangoFilterBackend,)
@@ -59,7 +59,7 @@ class RecipeViewSet(ModelViewSet):
     Этот класс предоставляет CRUD-операции для рецептов.
     Он использует RecipeSerializer для сериализации и десериализации рецептов.
     """
-    queryset = Recipe.objects.all().order_by('-pub_date')
+    queryset = models.Recipe.objects.all()
     serializer_class = serializers.RecipeSerializer
     pagination_class = PageNumberPagination
     permission_classes = (IsOwnerOrReadOnly,)
@@ -70,14 +70,15 @@ class RecipeViewSet(ModelViewSet):
     @action(
         methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
     )
-    def add_to_favorites(self, request, pk):
+    def add_to_favorites(self, request, pk=None):
         """
         Добавление рецепта в избранное.
         """
-        favorite, created = Favorites.objects.get_or_create(
-            user=request.user, recipe=self.get_object()
+        recipe = self.get_object()
+        favorite, created = models.Favorite.objects.get_or_create(
+            user=request.user, recipe=recipe
         )
-        serializer = serializers.FavoritesSerializer(favorite)
+        serializer = serializers.FavoriteSerializer(favorite)
         if created:
             return Response({
                 'message': 'Рецепт добавлен в избранное',
@@ -92,12 +93,13 @@ class RecipeViewSet(ModelViewSet):
     @action(
         methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
     )
-    def remove_from_favorites(self, request, pk):
+    def remove_from_favorites(self, request, pk=None):
         """
         Удаление рецепта из избранного.
         """
-        favorite = Favorites.objects.filter(
-            user=request.user, recipe=self.get_object()
+        recipe = self.get_object()
+        favorite = models.Favorite.objects.filter(
+            user=request.user, recipe=recipe
         )
         favorite.delete()
         return Response({
@@ -108,12 +110,13 @@ class RecipeViewSet(ModelViewSet):
     @action(
         methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
     )
-    def add_to_shopping_list(self, request, pk):
+    def add_to_shopping_list(self, request, pk=None):
         """
         Добавление рецепта в список покупок.
         """
-        shopping_list, created = ShoppingList.objects.get_or_create(
-            user=request.user, recipe=self.get_object()
+        recipe = self.get_object()
+        shopping_list, created = models.ShoppingList.objects.get_or_create(
+            user=request.user, recipe=recipe
         )
         serializer = serializers.ShoppingListSerializer(shopping_list)
         if created:
@@ -130,12 +133,13 @@ class RecipeViewSet(ModelViewSet):
     @action(
         methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
     )
-    def remove_from_shopping_list(self, request, pk):
+    def remove_from_shopping_list(self, request, pk=None):
         """
         Удаление рецепта из списка покупок.
         """
-        shopping_list = ShoppingList.objects.filter(
-            user=request.user, recipe=self.get_object()
+        recipe = self.get_object()
+        shopping_list = models.ShoppingList.objects.filter(
+            user=request.user, recipe=recipe
         )
         shopping_list.delete()
         return Response({
@@ -146,46 +150,25 @@ class RecipeViewSet(ModelViewSet):
         """
         Создание нового рецепта.
         """
-        tags = request.data.get('tags', [])
-        ingredients = request.data.get('ingredients', [])
-        image = request.FILES.get('image')
-
-        recipe = Recipe(
-            name=request.data.get('name'),
-            author=request.user,
-            text=request.data.get('text'),
-            cooking_time=request.data.get('cooking_time')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
-        recipe.save()
-
-        for tag in tags:
-            tag_obj, _ = Tag.objects.get_or_create(name=tag)
-            recipe.tags.add(tag_obj)
-
-        for ingredient in ingredients:
-            ingredient_obj, _ = Ingredient.objects.get_or_create(
-                name=ingredient['name']
-            )
-            recipe.ingredients.add(ingredient_obj)
-
-        if image:
-            recipe.image = image
-            recipe.save()
-
-        serializer = serializers.RecipeSerializer(recipe)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class FavoritesViewSet(ModelViewSet):
+class FavoriteViewSet(ModelViewSet):
     """
     ViewSet для избранного.
 
     Этот класс предоставляет CRUD-операции для избранного.
-    Он использует FavoritesSerializer для сериализации
+    Он использует FavoriteSerializer для сериализации
     и десериализации избранного.
     """
-    queryset = Favorites.objects.all()
-    serializer_class = serializers.FavoritesSerializer
+    queryset = models.Favorite.objects.all()
+    serializer_class = serializers.FavoriteSerializer
     permission_classes = (IsAuthenticatedUser,)
 
 
@@ -197,19 +180,20 @@ class ShoppingListViewSet(ModelViewSet):
     Он использует ShoppingListSerializer для сериализации
     и десериализации списка покупок.
     """
-    queryset = ShoppingList.objects.all()
+    queryset = models.ShoppingList.objects.all()
     serializer_class = serializers.ShoppingListSerializer
     permission_classes = (IsAuthenticatedUser,)
 
-    @action(methods=['get'], detail=False)
+    @action(methods=['get'], detail=False,
+            permission_classes=[IsAuthenticatedUser])
     def download_shopping_list(self, request):
         """
         Скачивание списка покупок.
         """
         ingredients = {}
-        for item in ShoppingList.objects.filter(user=request.user):
+        for item in models.ShoppingList.objects.filter(user=request.user):
             for recipe_ingredient in item.recipe.recipeingredient_set.all():
-                ingredient = recipe_ingredient.ingredients
+                ingredient = recipe_ingredient.ingredient
                 quantity = recipe_ingredient.amount
                 if ingredient.name in ingredients:
                     ingredients[ingredient.name] += quantity

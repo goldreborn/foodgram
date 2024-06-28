@@ -12,7 +12,7 @@ from django.core.validators import (
 from django.db import models
 from PIL import Image
 
-from users.models import CustomUser
+from users.models import User
 
 
 TAG_MAX_LENGTH = 255
@@ -115,7 +115,7 @@ class Recipe(models.Model):
     author = models.ForeignKey(
         verbose_name='Автор',
         related_name='recipes',
-        to=CustomUser,
+        to=User,
         on_delete=models.CASCADE
     )
     tags = models.ManyToManyField(
@@ -181,21 +181,17 @@ class Recipe(models.Model):
 class RecipeIngredient(models.Model):
     """Модель ингредиентов-рецепта."""
 
-    ingredients = models.ForeignKey(
+    ingredient = models.ForeignKey(
         Ingredient, on_delete=models.CASCADE,
-        related_name='ingredients_list', verbose_name='Ингредиенты'
+        related_name='recipeingredients', verbose_name='Ингредиенты'
     )
     recipe = models.ForeignKey(
         Recipe, on_delete=models.CASCADE,
-        related_name='recipes_ingredients_list', verbose_name='Рецепт'
+        related_name='recipeingredients', verbose_name='Рецепт'
     )
     amount = models.PositiveSmallIntegerField(
         default=0.1, validators=[MinValueValidator(1)],
         verbose_name='Количество ингредиентов'
-    )
-    measurement_unit = models.CharField(
-        verbose_name='Единицы измерения',
-        max_length=INGREDIENT_MAX_UNITS,
     )
 
     class Meta:
@@ -205,7 +201,7 @@ class RecipeIngredient(models.Model):
         verbose_name_plural = 'Ингредиенты в рецепте'
 
 
-class Favorites(models.Model):
+class Favorite(models.Model):
     """Модель избранного рецепта."""
 
     recipe = models.ForeignKey(
@@ -217,7 +213,7 @@ class Favorites(models.Model):
     user = models.ForeignKey(
         verbose_name='Пользователь',
         related_name='favorites',
-        to=CustomUser,
+        to=User,
         on_delete=models.CASCADE,
     )
     date_added = models.DateTimeField(
@@ -264,7 +260,7 @@ class ShoppingList(models.Model):
     user = models.ForeignKey(
         verbose_name='Владелец списка',
         related_name='carts',
-        to=CustomUser,
+        to=User,
         on_delete=models.CASCADE,
     )
     date_added = models.DateTimeField(
