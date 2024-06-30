@@ -13,11 +13,12 @@ jobs:
       postgres:
         image: postgres:13.10
         env:
-          POSTGRES_USER: adm
-          POSTGRES_PASSWORD: adm
-          POSTGRES_DB: postgres
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: admin
         ports:
           - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -33,9 +34,9 @@ jobs:
 
       - name: Test with flake8
         env:
-          POSTGRES_USER: adm
-          POSTGRES_PASSWORD: adm
-          POSTGRES_DB: postgres
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: admin
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
         run: |
@@ -81,6 +82,7 @@ jobs:
             sudo docker-compose down
             sudo docker system prune -af
             sudo docker-compose pull
+            sudo chmod 644 .env
             sudo rm .env
             sudo touch .env
             echo SECRET_KEY='${{ secrets.SECRET_KEY }}' >> .env  
@@ -114,3 +116,5 @@ jobs:
             message: ${{ github.event.head_commit.message }}
 
             link: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+
+
