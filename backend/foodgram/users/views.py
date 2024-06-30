@@ -72,6 +72,7 @@ class UserSubscribeView(APIView):
                                  author=user_id).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 class UserSubscriptionsListViewSet(
     ListModelMixin, GenericViewSet
 ):

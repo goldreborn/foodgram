@@ -1,13 +1,15 @@
 """
 Модуль для вспомогательных функций и пользовательских полей.
 
-Этот модуль предоставляет вспомогательные функции и пользовательские поля, используемые в сериализаторах и моделях.
+Этот модуль предоставляет вспомогательные функции и пользовательские поля,
+используемые в сериализаторах и моделях.
 """
 import uuid
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
 import base64
+
 
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):

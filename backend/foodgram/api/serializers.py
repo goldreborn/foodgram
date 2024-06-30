@@ -29,6 +29,7 @@ class UserCreateSerializer(djoser_serializers.UserCreateSerializer):
             'last_name', 'password'
         )
 
+
 class UserSerializer(djoser_serializers.UserSerializer):
     """Сериализатор для работы с информацией о пользователях."""
     is_subscribed = serializers.SerializerMethodField()
@@ -64,10 +65,10 @@ class UserSubscribeRepresentSerializer(UserSerializer):
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed','recipes','recipes_count')
+                  'is_subscribed', 'recipes', 'recipes_count')
         read_only_fields = (
             'email', 'username', 'first_name', 'last_name',
-            'is_subscribed','recipes','recipes_count'
+            'is_subscribed', 'recipes', 'recipes_count'
         )
 
     def get_recipes(self, obj):
@@ -265,6 +266,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         ingredients = models.RecipeIngredient.objects.filter(recipe=obj)
         return IngredientGetSerializer(ingredients, many=True).data
 
+
 class ShoppingCartSerializer(serializers.ModelSerializer):
     """Сериализатор для работы со списком покупок."""
     class Meta:
@@ -277,6 +279,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
                 message='Рецепт уже добавлен в список покупок'
             )
         ]
+
     def to_representation(self, instance):
         request = self.context.get('request')
         return RecipeMiniSerializer(

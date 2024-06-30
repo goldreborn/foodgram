@@ -66,11 +66,12 @@ class RecipeViewSet(ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def get_link(self, request, pk=None):
+        origin = 'https://edagram.zapto.org/api/recipes/'
         try:
             recipe = self.get_object()
             serializer = serializers.RecipeSerializer(recipe)
             return Response({
-                'link': f'https://edagram.zapto.org/api/recipes/{serializer.data["id"]}/'
+                'link': f'{origin}{serializer.data["id"]}/'
             }, status=200)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
@@ -107,10 +108,8 @@ class RecipeViewSet(ModelViewSet):
                 'message': 'Рецепт удален из избранного'
             }, status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-            detail=True, methods=['post', 'delete'],
-            permission_classes=[IsAuthenticatedUser]
-        )
+    @action(detail=True, methods=['post', 'delete'],
+            permission_classes=[IsAuthenticatedUser])
     def shopping_cart(self, request, pk=None):
         recipe = self.get_object()
         if request.method == 'POST':
