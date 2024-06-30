@@ -65,7 +65,7 @@ jobs:
             cd foodgram
             sudo docker-compose down
             sudo docker system prune -af
-            sudo docker-compose pull up -d
+            sudo docker-compose pull up -d --build
             sudo docker-compose exec -T backend python manage.py makemigrations
             sudo docker-compose exec -T backend python manage.py migrate
             sudo docker-compose exec -T backend python manage.py load_ingredients --path=ingredients.csv

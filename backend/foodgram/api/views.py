@@ -118,17 +118,17 @@ class RecipeViewSet(ModelViewSet):
             )
             if created:
                 return Response({
-                    'message': 'Recipe added to shopping cart'
+                    'message': 'Добавлено в список покупок'
                 }, status=status.HTTP_201_CREATED)
             return Response({
-                'message': 'Recipe already in shopping cart'
+                'message': 'Уже в списке покупок'
             }, status=status.HTTP_200_OK)
         elif request.method == 'DELETE':
             models.ShoppingCart.objects.filter(
                 user=request.user, recipe=recipe
             ).delete()
             return Response({
-                'message': 'Recipe removed from shopping cart'
+                'message': 'Удалено из списка покупок'
             }, status=status.HTTP_204_NO_CONTENT)
 
     @action(
