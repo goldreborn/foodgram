@@ -21,7 +21,7 @@ class UpdateAvatarView(APIView):
                 'avatar': user.avatar.url
             }, status=status.HTTP_200_OK)
         return Response({
-            'error': 'Avatar not found'
+            'error': 'Аватар не найден'
         }, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request):
