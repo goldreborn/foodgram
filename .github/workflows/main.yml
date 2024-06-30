@@ -13,16 +13,11 @@ jobs:
       postgres:
         image: postgres:13.10
         env:
-          POSTGRES_USER: admin
-          POSTGRES_PASSWORD: admin
-          POSTGRES_DB: admin
+          POSTGRES_USER: adm
+          POSTGRES_PASSWORD: adm
+          POSTGRES_DB: postgres
         ports:
           - 5432:5432
-        options: >
-          --health-cmd="pg_isready" 
-          --health-interval=10s 
-          --health-timeout=5s 
-          --health-retries=5
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -38,12 +33,13 @@ jobs:
 
       - name: Test with flake8
         env:
-          POSTGRES_USER: admin
-          POSTGRES_PASSWORD: admin
-          POSTGRES_DB: admin
+          POSTGRES_USER: adm
+          POSTGRES_PASSWORD: adm
+          POSTGRES_DB: postgres
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
-        run: python -m flake8
+        run: |
+          python -m flake8 
 
   build_and_push:
     name: Push Docker image to Docker Hub
@@ -87,13 +83,13 @@ jobs:
             sudo docker-compose pull
             sudo rm .env
             sudo touch .env
-            echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env  
+            echo SECRET_KEY='${{ secrets.SECRET_KEY }}' >> .env  
             echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env 
             echo DB_NAME=${{ secrets.DB_NAME }} >> .env 
             echo POSTGRES_USER=${{ secrets.POSTGRES_USER }} >> .env 
             echo POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} >> .env
             echo DB_HOST=${{ secrets.DB_HOST }} >> .env
-            echo DB_PORT=${{ secrets.DB_PORT }} >> .env
+            echo DB_PORT=${{ secrets.PORT }} >> .env
             sudo docker-compose up -d --build
             sudo docker-compose exec -T backend python manage.py makemigrations
             sudo docker-compose exec -T backend python manage.py migrate
