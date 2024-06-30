@@ -16,11 +16,10 @@ class Command(BaseCommand):
         try:
             with open(path, mode="r", encoding="utf-8") as csvfile:
                 for row in csv.reader(csvfile):
-                    name, color, slug = row
+                    name, slug = row
+                    print(row)
                     Tag.objects.get_or_create(
-                        name=name,
-                        color=color,
-                        slug=slug
+                        name=name, slug=slug
                     )
         except FileNotFoundError:
             raise FileNotFoundError(f'Ошибка: файл {path} не найден')

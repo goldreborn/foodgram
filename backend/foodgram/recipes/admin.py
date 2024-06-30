@@ -17,9 +17,9 @@ class RecipeIngredientInline(admin.TabularInline):
 class TagAdmin(admin.ModelAdmin):
     """Класс администрирования для тегов."""
 
-    list_display = ('pk', 'name', 'color', 'slug')
-    search_fields = ('name', 'color', 'slug')
-    list_filter = ('name', 'color', 'slug')
+    list_display = ('pk', 'name', 'slug')
+    search_fields = ('name', 'slug')
+    list_filter = ('name', 'slug')
 
 
 class IngredientAdmin(admin.ModelAdmin):
@@ -71,4 +71,4 @@ admin.site.register(models.Ingredient, IngredientAdmin)
 admin.site.register(models.Recipe, RecipeAdmin)
 admin.site.register(models.RecipeIngredient, RecipeIngredientAdmin)
 admin.site.register(models.Favorite, FavoriteAdmin)
-admin.site.register(models.ShoppingList, ShoppingCartAdmin)
+admin.site.register(models.ShoppingCart, ShoppingCartAdmin)

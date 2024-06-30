@@ -1,20 +1,23 @@
-from rest_framework.permissions import BasePermission
+"""
+Модуль для определения пользовательских разрешений.
 
-
-class IsAuthenticatedUser(BasePermission):
-    """
-    Доступ авторизованному пользователю
-    """
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
+Этот модуль предоставляет пользовательские разрешения,
+используемые в представлениях.
+"""
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
 class IsOwnerOrReadOnly(BasePermission):
-    """
-    Доступ владельца к своему контенту или только чтение
-    """
-    def has_object_permission(self, request, view, obj):
-        if request.method in ('GET', 'HEAD', 'OPTIONS'):
-            return True
+    """Разрешение, позволяющее редактировать объект только его владельцу."""
 
-        return obj.owner == request.user
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+        return obj.author == request.user
+
+
+class IsAuthenticatedUser(BasePermission):
+    """Разрешение, позволяющее доступ только авторизованным пользователям."""
+
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated

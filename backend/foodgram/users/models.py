@@ -3,10 +3,10 @@ from django.db import models
 from django.contrib.auth.password_validation import validate_password
 
 MAX_USERNAME_LENGTH = 150
-MAX_PASSWORD_LENGTH = 128
+MAX_PASSWORD_LENGTH = 150
 MAX_EMAIL_LENGTH = 254
-MAX_FIRSTNAME_LENGTH = 30
-MAX_SECONDNAME_LENGTH = 30
+MAX_FIRSTNAME_LENGTH = 150
+MAX_SECONDNAME_LENGTH = 150
 
 
 class User(dj_models.AbstractUser, dj_models.PermissionsMixin):

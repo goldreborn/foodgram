@@ -11,12 +11,14 @@
 Каждый ViewSet предоставляет набор методов для выполнения операций с данными.
 """
 from django.http import HttpResponse
-from django.db.transaction import atomic
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Sum
 from rest_framework import status
+from rest_framework import mixins
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.viewsets import (
+    ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
+)
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 
@@ -26,16 +28,14 @@ from .filters import IngredientFilter, RecipeFilter
 from . import serializers
 
 
-class TagViewSet(ReadOnlyModelViewSet):
-    """
-    ViewSet для тегов рецептов.
-
-    Этот класс предоставляет операции чтения для тегов рецептов.
-    Он использует TagSerializer для сериализации и десериализации тегов.
-    """
+class TagViewSet(
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericViewSet
+):
+    """Функция для модели тегов."""
     queryset = models.Tag.objects.all()
     serializer_class = serializers.TagSerializer
-    permission_classes = (AllowAny,)
+    permission_classes = (AllowAny, )
+    pagination_class = None
 
 
 class IngredientViewSet(ReadOnlyModelViewSet):
@@ -53,157 +53,104 @@ class IngredientViewSet(ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(ModelViewSet):
-    """
-    ViewSet для рецептов.
-
-    Этот класс предоставляет CRUD-операции для рецептов.
-    Он использует RecipeSerializer для сериализации и десериализации рецептов.
-    """
     queryset = models.Recipe.objects.all()
-    serializer_class = serializers.RecipeSerializer
-    pagination_class = PageNumberPagination
     permission_classes = (IsOwnerOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
-    @atomic
-    @action(
-        methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
-    )
-    def add_to_favorites(self, request, pk=None):
-        """
-        Добавление рецепта в избранное.
-        """
-        recipe = self.get_object()
-        favorite, created = models.Favorite.objects.get_or_create(
-            user=request.user, recipe=recipe
-        )
-        serializer = serializers.FavoriteSerializer(favorite)
-        if created:
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return serializers.RecipeCreateSerializer
+        return serializers.RecipeSerializer
+
+    @action(detail=True, methods=['get'])
+    def get_link(self, request, pk=None):
+        try:
+            recipe = self.get_object()
+            serializer = serializers.RecipeSerializer(recipe)
             return Response({
-                'message': 'Рецепт добавлен в избранное',
-                'data': serializer.data
-            })
-        return Response({
-            'message': 'Рецепт уже находится в избранном',
-            'data': serializer.data
-        })
+                'link': f'https://edagram.zapto.org/api/recipes/{serializer.data["id"]}/'
+            }, status=200)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
-    @atomic
     @action(
-        methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
+        detail=False,
+        methods=['post', 'delete'],
+        permission_classes=[IsAuthenticatedUser, ]
     )
-    def remove_from_favorites(self, request, pk=None):
-        """
-        Удаление рецепта из избранного.
-        """
+    def favorite(self, request, pk=None):
         recipe = self.get_object()
-        favorite = models.Favorite.objects.filter(
-            user=request.user, recipe=recipe
-        )
-        favorite.delete()
-        return Response({
-            'message': 'Рецепт удален из избранного'
-        }, status=status.HTTP_204_NO_CONTENT)
-
-    @atomic
-    @action(
-        methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
-    )
-    def add_to_shopping_list(self, request, pk=None):
-        """
-        Добавление рецепта в список покупок.
-        """
-        recipe = self.get_object()
-        shopping_list, created = models.ShoppingList.objects.get_or_create(
-            user=request.user, recipe=recipe
-        )
-        serializer = serializers.ShoppingListSerializer(shopping_list)
-        if created:
+        if request.method == 'POST':
+            if models.Favorite.objects.filter(
+                user=request.user, recipe=recipe
+            ).exists():
+                return Response({
+                    'message': 'Рецепт уже есть в избранном'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            models.Favorite.objects.create(user=request.user, recipe=recipe)
             return Response({
-                'message': 'Рецепт добавлен в список покупок',
-                'data': serializer.data
-            })
-        return Response({
-            'message': 'Рецепт уже находится в списке покупок',
-            'data': serializer.data
-        })
+                'message': 'Рецепт добавлен в избранное'
+            }, status=status.HTTP_201_CREATED)
+        elif request.method == 'DELETE':
+            if not models.Favorite.objects.filter(
+                user=request.user, recipe=recipe
+            ).exists():
+                return Response({
+                    'message': 'Рецепт не в избранном'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            models.Favorite.objects.filter(
+                user=request.user, recipe=recipe
+            ).delete()
+            return Response({
+                'message': 'Рецепт удален из избранного'
+            }, status=status.HTTP_204_NO_CONTENT)
 
-    @atomic
     @action(
-        methods=['post'], detail=True, permission_classes=[IsAuthenticatedUser]
-    )
-    def remove_from_shopping_list(self, request, pk=None):
-        """
-        Удаление рецепта из списка покупок.
-        """
+            detail=True, methods=['post', 'delete'],
+            permission_classes=[IsAuthenticatedUser]
+        )
+    def shopping_cart(self, request, pk=None):
         recipe = self.get_object()
-        shopping_list = models.ShoppingList.objects.filter(
-            user=request.user, recipe=recipe
-        )
-        shopping_list.delete()
-        return Response({
-            'message': 'Рецепт удален из списка покупок'
-        }, status=status.HTTP_204_NO_CONTENT)
+        if request.method == 'POST':
+            _, created = models.ShoppingCart.objects.get_or_create(
+                user=request.user, recipe=recipe
+            )
+            if created:
+                return Response({
+                    'message': 'Recipe added to shopping cart'
+                }, status=status.HTTP_201_CREATED)
+            return Response({
+                'message': 'Recipe already in shopping cart'
+            }, status=status.HTTP_200_OK)
+        elif request.method == 'DELETE':
+            models.ShoppingCart.objects.filter(
+                user=request.user, recipe=recipe
+            ).delete()
+            return Response({
+                'message': 'Recipe removed from shopping cart'
+            }, status=status.HTTP_204_NO_CONTENT)
 
-    def create(self, request, *args, **kwargs):
-        """
-        Создание нового рецепта.
-        """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
-
-
-class FavoriteViewSet(ModelViewSet):
-    """
-    ViewSet для избранного.
-
-    Этот класс предоставляет CRUD-операции для избранного.
-    Он использует FavoriteSerializer для сериализации
-    и десериализации избранного.
-    """
-    queryset = models.Favorite.objects.all()
-    serializer_class = serializers.FavoriteSerializer
-    permission_classes = (IsAuthenticatedUser,)
-
-
-class ShoppingListViewSet(ModelViewSet):
-    """
-    ViewSet для списка покупок.
-
-    Этот класс предоставляет CRUD-операции для списка покупок.
-    Он использует ShoppingListSerializer для сериализации
-    и десериализации списка покупок.
-    """
-    queryset = models.ShoppingList.objects.all()
-    serializer_class = serializers.ShoppingListSerializer
-    permission_classes = (IsAuthenticatedUser,)
-
-    @action(methods=['get'], detail=False,
-            permission_classes=[IsAuthenticatedUser])
-    def download_shopping_list(self, request):
-        """
-        Скачивание списка покупок.
-        """
-        ingredients = {}
-        for item in models.ShoppingList.objects.filter(user=request.user):
-            for recipe_ingredient in item.recipe.recipeingredient_set.all():
-                ingredient = recipe_ingredient.ingredient
-                quantity = recipe_ingredient.amount
-                if ingredient.name in ingredients:
-                    ingredients[ingredient.name] += quantity
-                else:
-                    ingredients[ingredient.name] = quantity
-
-        response = HttpResponse(content_type='text/plain')
-        response['Content-Disposition'] = (
-            'attachment; filename="shopping_list.txt"'
-        )
-        for ingredient, quantity in ingredients.items():
-            response.write(f'{ingredient} - {quantity}\n')
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[IsAuthenticatedUser, ]
+    )
+    def download_shopping_cart(self, request):
+        """Отправка файла со списком покупок."""
+        ingredients = models.RecipeIngredient.objects.filter(
+            recipe__carts__user=request.user
+        ).values(
+            'ingredient__name', 'ingredient__measurement_unit'
+        ).annotate(ingredient_amount=Sum('amount'))
+        shopping_list = ['Список покупок:\n']
+        for ingredient in ingredients:
+            name = ingredient['ingredient__name']
+            unit = ingredient['ingredient__measurement_unit']
+            amount = ingredient['ingredient_amount']
+            shopping_list.append(f'\n{name} - {amount}, {unit}')
+        response = HttpResponse(shopping_list, content_type='text/plain')
+        response['Content-Disposition'] = \
+            'attachment; filename="shopping_cart.txt"'
         return response

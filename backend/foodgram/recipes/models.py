@@ -5,8 +5,7 @@
 рецептов, избранного, подписок и списка покупок.
 """
 from django.core.validators import (
-    MaxLengthValidator, MinValueValidator,
-    RegexValidator, FileExtensionValidator
+    MinValueValidator, RegexValidator, FileExtensionValidator
 )
 
 from django.db import models
@@ -15,9 +14,10 @@ from PIL import Image
 from users.models import User
 
 
-TAG_MAX_LENGTH = 255
+TAG_MAX_LENGTH = 32
 INGREDIENT_MAX_UNITS = 255
 RECIPE_MAX_TEXT_LENGTH = 1000
+MIN_COOKING_TIME_IN_MINUTES = 1
 
 
 class Tag(models.Model):
@@ -30,27 +30,19 @@ class Tag(models.Model):
     name = models.CharField(
         verbose_name='Тэг',
         max_length=TAG_MAX_LENGTH,
-        validators=[
-            MaxLengthValidator(
-                TAG_MAX_LENGTH, f'Тэг не может быть больше {TAG_MAX_LENGTH}'
-            ),
-            RegexValidator(
-                regex=r'^[a-zA-Z0-9]+$',
-                message='Тэг может содержать только буквы и цифры',
-                code='invalid'
-            )
-        ],
-        unique=True,
-    )
-    color = models.CharField(
-        verbose_name='Цвет',
-        max_length=15,
         unique=True,
     )
     slug = models.CharField(
         verbose_name='слаг',
-        max_length=255,
+        max_length=TAG_MAX_LENGTH,
         unique=True,
+        validators=[
+            RegexValidator(
+                regex=r'^[a-zA-Z0-9_]+$',
+                message=('Пароль может состоять только'
+                         'из букв латинского алфавита и цифр'),
+            )
+        ]
     )
 
     class Meta:
@@ -66,7 +58,7 @@ class Tag(models.Model):
 
         return: строка с именем тега и его цветом
         """
-        return f'{self.name}: (цвет-{self.color})'
+        return f'{self.name}'
 
 
 class Ingredient(models.Model):
@@ -110,7 +102,7 @@ class Recipe(models.Model):
 
     name = models.CharField(
         verbose_name='Рецепт',
-        max_length=255
+        max_length=256
     )
     author = models.ForeignKey(
         verbose_name='Автор',
@@ -119,8 +111,10 @@ class Recipe(models.Model):
         on_delete=models.CASCADE
     )
     tags = models.ManyToManyField(
+        Tag,
+        db_index=True,
         verbose_name='Теги',
-        to=Tag,
+        help_text='Выберите теги'
     )
     ingredients = models.ManyToManyField(
         verbose_name='Ингредиенты',
@@ -147,7 +141,10 @@ class Recipe(models.Model):
     )
     cooking_time = models.FloatField(
         verbose_name='Время приготовления',
-        default=0
+        default=0,
+        validators=[
+            MinValueValidator(MIN_COOKING_TIME_IN_MINUTES),
+        ]
     )
 
     class Meta:
@@ -244,7 +241,7 @@ class Favorite(models.Model):
         return f'{self.user}: {self.recipe}'
 
 
-class ShoppingList(models.Model):
+class ShoppingCart(models.Model):
     """
     Модель списка покупок.
 
@@ -263,20 +260,9 @@ class ShoppingList(models.Model):
         to=User,
         on_delete=models.CASCADE,
     )
-    date_added = models.DateTimeField(
-        verbose_name='Дата добавления', auto_now_add=True, editable=False
-    )
 
     class Meta:
         """Мета-класс модели списка покупок."""
 
         verbose_name = 'Рецепт в списке покупок'
         verbose_name_plural = 'Рецепты в списке покупок'
-
-    def __str__(self) -> str:
-        """
-        Строковое представление рецепта в списке покупок.
-
-        return: строка с именем пользователя и его рецептом в списке покупок
-        """
-        return f'{self.user}: {self.recipe}'

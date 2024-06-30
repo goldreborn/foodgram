@@ -13,19 +13,19 @@ v1_router.register(
     r'ingredients', views.IngredientViewSet, basename='ingredients'
 )
 v1_router.register(r'recipes', views.RecipeViewSet, basename='recipes')
-v1_router.register('users', user_views.UserViewSet, basename='users')
-
+v1_router.register(r'users', user_views.UserViewSet, basename='users')
 
 urlpatterns = [
-    path(
-        'users/me/avatar/', user_views.UserAvatarUpdateView.as_view(),
-        name='user-avatar-update'
-    ),
+    path('users/me/avatar/', user_views.UpdateAvatarView.as_view()),
     path('users/subscriptions/',
-         user_views.SubscriptionListViewSet.as_view({'get': 'list'})),
+         user_views.UserSubscriptionsListViewSet.as_view({'get': 'list'})),
     path(
         'users/<int:user_id>/subscribe/',
-        user_views.SubscriptionView.as_view()
+        user_views.UserSubscribeView.as_view()
+    ),
+    path(
+        'recipes/<int:pk>/get-link/',
+        views.RecipeViewSet.as_view({'get': 'get_link'})
     ),
     path('', include(v1_router.urls)),
     path('', include('djoser.urls')),
