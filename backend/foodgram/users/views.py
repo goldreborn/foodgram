@@ -88,9 +88,9 @@ class UserViewSet(DjoserUserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(
-            detail=False, methods=['get'],
-            permission_classes=[IsAuthenticatedUser]
-        )
+        detail=False, methods=['get'],
+        permission_classes=[IsAuthenticatedUser]
+    )
     def users_me(self, request):
         user = request.user
         serializer = serializers.UserSerializer(user)
