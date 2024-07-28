@@ -147,6 +147,9 @@ class Recipe(models.Model):
         ]
     )
 
+    is_in_shopping_cart = models.BooleanField(default=False)
+    is_favorited = models.BooleanField(default=False)
+
     class Meta:
         """Мета-класс модели рецепта."""
 
@@ -199,46 +202,32 @@ class RecipeIngredient(models.Model):
 
 
 class Favorite(models.Model):
-    """Модель избранного рецепта."""
-
-    recipe = models.ForeignKey(
-        verbose_name='Понравившиеся рецепты',
-        related_name='in_favorites',
-        to=Recipe,
-        on_delete=models.CASCADE,
-    )
     user = models.ForeignKey(
-        verbose_name='Пользователь',
-        related_name='favorites',
-        to=User,
+        User,
         on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Пользователь',
     )
-    date_added = models.DateTimeField(
-        verbose_name='Дата добавления', auto_now_add=True, editable=False
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Рецепт',
     )
 
     class Meta:
-        """Мета-класс модели избранных рецептов."""
-
-        verbose_name = 'Избранный рецепт'
-        verbose_name_plural = 'Избранные рецепты'
-        constraints = (
+        ordering = ['-id']
+        constraints = [
             models.UniqueConstraint(
-                fields=(
-                    'recipe',
-                    'user',
-                ),
-                name='Рецепт уже добавлен в избранное',
-            ),
-        )
+                fields=['user', 'recipe'],
+                name='unique_user_recipe_favorite'
+            )
+        ]
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
 
-    def __str__(self) -> str:
-        """
-        Строковое представление избранного рецепта.
-
-        return: строка с именем пользователя и его избранным рецептом
-        """
-        return f'{self.user}: {self.recipe}'
+    def __str__(self):
+        return f'{self.user.username} добавил {self.recipe.name} в избраннное'
 
 
 class ShoppingCart(models.Model):

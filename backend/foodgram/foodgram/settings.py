@@ -9,7 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', 'default')
 
-CSRF_TRUSTED_ORIGINS = ["https://edagram.zapto.org"]
+CSRF_TRUSTED_ORIGINS = ['https://edagram.zapto.org', 'http://127.0.0.1']
 
 DEBUG = False
 
@@ -115,13 +115,14 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'api.pagination.PageLimitPagination',
     'PAGE_SIZE': 6,
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
 }
+
 
 AUTH_USER_MODEL = 'users.User'
 

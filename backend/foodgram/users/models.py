@@ -17,7 +17,9 @@ class User(dj_models.AbstractUser, dj_models.PermissionsMixin):
     password = models.CharField(
         max_length=MAX_PASSWORD_LENGTH,
         blank=False,
-        validators=[validate_password],
+        validators=[
+            validate_password
+        ],
     )
     email = models.EmailField(
         max_length=MAX_EMAIL_LENGTH,
