@@ -72,8 +72,12 @@ class RecipeViewSet(ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
-        serializer = serializers.RecipeCreateSerializer(data=request.data, context={'request': request})
+            return Response({
+                'detail': 'Authentication credentials were not provided.'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        serializer = serializers.RecipeCreateSerializer(
+            data=request.data, context={'request': request}
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -82,7 +86,10 @@ class RecipeViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = serializers.RecipeCreateSerializer(instance, data=request.data, partial=partial, context={'request': request})
+        serializer = serializers.RecipeCreateSerializer(
+            instance, data=request.data, partial=partial,
+            context={'request': request}
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -98,38 +105,65 @@ class RecipeViewSet(ModelViewSet):
 
         if request.method == 'POST':
             if not request.user.is_authenticated:
-                return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({
+                    'detail': 'Authentication credentials were not provided.'
+                }, status=status.HTTP_401_UNAUTHORIZED)
 
-            if models.Favorite.objects.filter(user=request.user, recipe=recipe).exists():
-                return Response({'detail': 'Recipe is already in favorites.'}, status=status.HTTP_400_BAD_REQUEST)
+            if models.Favorite.objects.filter(
+                user=request.user, recipe=recipe
+            ).exists():
+                return Response({
+                    'detail': 'Recipe is already in favorites.'
+                }, status=status.HTTP_400_BAD_REQUEST)
 
-            favorite = models.Favorite.objects.create(user=request.user, recipe=recipe)
-            serializer = serializers.FavoriteSerializer(recipe, context={'request': request})
+            favorite = models.Favorite.objects.create(
+                user=request.user, recipe=recipe
+            )
+            serializer = serializers.FavoriteSerializer(
+                recipe, context={'request': request}
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         elif request.method == 'DELETE':
-            favorite = models.Favorite.objects.filter(user=request.user, recipe=recipe)
+            favorite = models.Favorite.objects.filter(
+                user=request.user, recipe=recipe
+            )
             if favorite.exists():
                 favorite.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response({'detail': 'Recipe not found in favorites.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'detail': 'Recipe not found in favorites.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk=None):
         recipe = self.get_object()
         if request.method == 'POST':
-            if models.ShoppingCart.objects.filter(user=request.user, recipe=recipe).exists():
-                return Response({'detail': 'Recipe already in shopping cart.'}, status=status.HTTP_400_BAD_REQUEST)
-            shopping_cart = models.ShoppingCart.objects.create(user=request.user, recipe=recipe)
-            serializer = serializers.ShoppingCartSerializer(shopping_cart, context={'request': request})
+            if models.ShoppingCart.objects.filter(
+                user=request.user, recipe=recipe
+            ).exists():
+                return Response({
+                    'detail': 'Recipe already in shopping cart.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            shopping_cart = models.ShoppingCart.objects.create(
+                user=request.user, recipe=recipe
+            )
+            serializer = serializers.ShoppingCartSerializer(
+                shopping_cart, context={'request': request}
+            )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
-            shopping_cart = models.ShoppingCart.objects.filter(user=request.user, recipe=recipe)
+            shopping_cart = models.ShoppingCart.objects.filter(
+                user=request.user, recipe=recipe
+            )
             if shopping_cart.exists():
                 shopping_cart.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-            return Response({'detail': 'Recipe not found in shopping cart.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'detail': 'Recipe not found in shopping cart.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'],
             permission_classes=[IsAuthenticated])
@@ -147,5 +181,5 @@ class RecipeViewSet(ModelViewSet):
             amount = ingredient['ingredient_amount']
             shopping_list.append(f'\n{name} - {amount}, {unit}')
         response = HttpResponse(shopping_list, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
+        response['Content-Disposition'] = 'attachment; filename="buy_cart.txt"'
         return response

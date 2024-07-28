@@ -1,7 +1,7 @@
 import base64
 from djoser.views import UserViewSet as DjoserUserViewSet
 from django.core.files.base import ContentFile
-from django.shortcuts import get_object_or_404, get_list_or_404
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.mixins import ListModelMixin
@@ -13,7 +13,6 @@ from rest_framework.viewsets import GenericViewSet
 from .models import User, Subscription
 from api.permissions import IsAuthenticatedUser
 from api import serializers
-from api.pagination import PageLimitPagination
 
 
 class UpdateAvatarView(APIView):
@@ -22,8 +21,12 @@ class UpdateAvatarView(APIView):
     def get(self, request):
         user = request.user
         if user.avatar:
-            return Response({'avatar': user.avatar.url}, status=status.HTTP_200_OK)
-        return Response({'error': 'Аватар не найден'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({
+                'avatar': user.avatar.url
+            }, status=status.HTTP_200_OK)
+        return Response({
+            'error': 'Аватар не найден'
+        }, status=status.HTTP_404_NOT_FOUND)
 
     def put(self, request):
         user = request.user
@@ -36,11 +39,17 @@ class UpdateAvatarView(APIView):
                 file_name = f'image.{image_format}'
                 user.avatar.save(file_name, data, save=True)
                 user.save()
-                return Response({'avatar': user.avatar.url}, status=status.HTTP_200_OK)
+                return Response({
+                    'avatar': user.avatar.url
+                }, status=status.HTTP_200_OK)
             except Exception as e:
-                return Response({'error': f'Invalid avatar data {e}'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                    'error': f'Invalid avatar data {e}'
+                }, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'error': 'Avatar field is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'error': 'Avatar field is required.'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request):
         user = request.user
@@ -78,7 +87,10 @@ class UserViewSet(DjoserUserViewSet):
         serializer = serializers.UserSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticatedUser])
+    @action(
+            detail=False, methods=['get'],
+            permission_classes=[IsAuthenticatedUser]
+        )
     def users_me(self, request):
         user = request.user
         serializer = serializers.UserSerializer(user)
@@ -89,8 +101,12 @@ class UserViewSet(DjoserUserViewSet):
         if serializer.is_valid():
             self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
-            user_data = serializers.UserSerializer(serializer.instance, context={'request': request}).data
-            return Response(user_data, status=status.HTTP_201_CREATED, headers=headers)
+            user_data = serializers.UserSerializer(
+                serializer.instance, context={'request': request}
+            ).data
+            return Response(
+                user_data, status=status.HTTP_201_CREATED, headers=headers
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
@@ -105,19 +121,29 @@ class UserSubscribeView(APIView):
 
     def post(self, request, user_id):
         author = get_object_or_404(User, id=user_id)
-        subscription, created = Subscription.objects.get_or_create(user=request.user, author=author)
+        subscription, created = Subscription.objects.get_or_create(
+            user=request.user, author=author
+        )
         if not created:
-            return Response({'error': 'Already subscribed'}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = serializers.UserSubscribeSerializer(subscription, context={'request': request})
+            return Response({
+                'error': 'Already subscribed'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        serializer = serializers.UserSubscribeSerializer(
+            subscription, context={'request': request}
+        )
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, user_id):
         author = get_object_or_404(User, id=user_id)
-        subscription = Subscription.objects.filter(user=request.user, author=author)
+        subscription = Subscription.objects.filter(
+            user=request.user, author=author
+        )
         if subscription.exists():
             subscription.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({'errors': 'Not subscribed'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            'errors': 'Not subscribed'
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserSubscriptionsListViewSet(ListModelMixin, GenericViewSet):

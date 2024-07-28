@@ -1,4 +1,3 @@
-from django.utils.encoding import force_str
 from django_filters import (
     FilterSet, CharFilter, NumberFilter, BooleanFilter,
     ModelMultipleChoiceFilter

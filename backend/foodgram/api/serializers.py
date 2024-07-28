@@ -28,11 +28,15 @@ class UserCreateSerializer(djoser_serializers.UserCreateSerializer):
         )
         extra_kwargs = {'password': {'write_only': True}}
 
+
 class UserSerializer(djoser_serializers.UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta(djoser_serializers.UserSerializer.Meta):
-        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'is_subscribed', 'avatar')
+        fields = (
+            'id', 'email', 'username', 'first_name',
+            'last_name', 'is_subscribed', 'avatar'
+        )
 
     def get_is_subscribed(self, obj):
         user = self.context['request'].user
@@ -60,13 +64,18 @@ class UserSubscribeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ['email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'recipes', 'recipes_count', 'avatar']
+        fields = [
+            'email', 'id', 'username', 'first_name', 'last_name',
+            'is_subscribed', 'recipes', 'recipes_count', 'avatar'
+        ]
 
     def get_is_subscribed(self, obj):
         return True
 
     def get_recipes(self, obj):
-        recipes_limit = self.context['request'].query_params.get('recipes_limit', None)
+        recipes_limit = self.context['request'].query_params.get(
+            'recipes_limit', None
+        )
         recipes = obj.author.recipes.all()
         if recipes_limit:
             recipes = recipes[:int(recipes_limit)]
@@ -74,6 +83,7 @@ class UserSubscribeSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, obj):
         return obj.author.recipes.count()
+
 
 class UserSubscriptionsListSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='author.email')
@@ -88,13 +98,18 @@ class UserSubscriptionsListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subscription
-        fields = ['email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'recipes', 'recipes_count', 'avatar']
+        fields = [
+            'email', 'id', 'username', 'first_name', 'last_name',
+            'is_subscribed', 'recipes', 'recipes_count', 'avatar'
+        ]
 
     def get_is_subscribed(self, obj):
         return True
 
     def get_recipes(self, obj):
-        recipes_limit = self.context['request'].query_params.get('recipes_limit', None)
+        recipes_limit = self.context['request'].query_params.get(
+            'recipes_limit', None
+        )
         recipes = obj.author.recipes.all()
         if recipes_limit:
             recipes = recipes[:int(recipes_limit)]
@@ -199,7 +214,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'amount': 'Количество ингредиента должно быть больше 0.'
                 })
-            if not models.Ingredient.objects.filter(id=ingredient['id']).exists():
+            if not models.Ingredient.objects.filter(
+                id=ingredient['id']
+            ).exists():
                 raise serializers.ValidationError({
                     'ingredients': 'Несуществующий ингредиент.'
                 })
@@ -279,8 +296,9 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
+        user = request.user
         return (
-            request.user.is_authenticated and models.ShoppingCart.objects.filter(
+            user.is_authenticated and models.ShoppingCart.objects.filter(
                 user=request.user, recipe=obj
             ).exists()
         )
@@ -288,7 +306,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_image(self, obj):
         request = self.context.get('request')
         return request.build_absolute_uri(obj.image.url) if obj.image else None
-    
+
     def get_short_link(self, obj):
         request = self.context.get('request')
         return request.build_absolute_uri(f'/recipes/{obj.id}/short/')
