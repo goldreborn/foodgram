@@ -182,8 +182,6 @@ class RecipeViewSet(ModelViewSet):
             'user': request.user.id,
             'recipe': pk
         }
-        
-        # Check if the recipe exists
         try:
             recipe = Recipe.objects.get(id=pk)
         except Recipe.DoesNotExist:
@@ -218,8 +216,7 @@ class RecipeViewSet(ModelViewSet):
             'user': request.user.id,
             'recipe': pk
         }
-        
-        # Check if the recipe exists
+
         try:
             recipe = Recipe.objects.get(id=pk)
         except Recipe.DoesNotExist:
