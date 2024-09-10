@@ -185,7 +185,9 @@ class RecipeViewSet(ModelViewSet):
         try:
             recipe = Recipe.objects.get(id=pk)
         except Recipe.DoesNotExist:
-            return Response({'errors': 'Рецепт не найден'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({
+                'errors': 'Рецепт не найден'
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = FavoriteSerializer(data=data, context=context)
         serializer.is_valid(raise_exception=True)
@@ -220,7 +222,9 @@ class RecipeViewSet(ModelViewSet):
         try:
             recipe = Recipe.objects.get(id=pk)
         except Recipe.DoesNotExist:
-            return Response({'errors': 'Рецепт не найден'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({
+                'errors': 'Рецепт не найден'
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ShoppingCartSerializer(data=data, context=context)
         serializer.is_valid(raise_exception=True)
