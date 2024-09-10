@@ -1,72 +1,62 @@
-from django.contrib.auth import models as dj_models
+
+from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.contrib.auth.password_validation import validate_password
+from django.db.models import UniqueConstraint
 
-MAX_USERNAME_LENGTH = 150
-MAX_PASSWORD_LENGTH = 150
-MAX_EMAIL_LENGTH = 254
-MAX_FIRSTNAME_LENGTH = 150
-MAX_SECONDNAME_LENGTH = 150
+NAME_LENGTH = 150
+LAST_NAME_LENGTH = 150
 
 
-class User(dj_models.AbstractUser, dj_models.PermissionsMixin):
-    username = models.CharField(
-        max_length=MAX_USERNAME_LENGTH,
-        unique=True
-    )
-    password = models.CharField(
-        max_length=MAX_PASSWORD_LENGTH,
-        blank=False,
-        validators=[
-            validate_password
-        ],
-    )
-    email = models.EmailField(
-        max_length=MAX_EMAIL_LENGTH,
-        unique=True,
-    )
+class Profile(AbstractUser):
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     first_name = models.CharField(
-        max_length=MAX_FIRSTNAME_LENGTH
+        max_length=NAME_LENGTH,
+        blank=False
     )
     last_name = models.CharField(
-        max_length=MAX_SECONDNAME_LENGTH
+        max_length=LAST_NAME_LENGTH,
+        blank=False
     )
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
-    groups = models.ManyToManyField(
-        dj_models.Group, related_name='custom_user_groups'
+    email = models.EmailField(
+        blank=False,
+        unique=True
     )
-    user_permissions = models.ManyToManyField(
-        dj_models.Permission, related_name='custom_user_permissions'
-    )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = [
+        'username',
+        'first_name',
+        'last_name',
+    ]
 
     class Meta:
-        ordering = ['id']
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
+        ordering = ['first_name', 'last_name', 'username', 'email']
+        verbose_name = 'профиль'
+        verbose_name_plural = 'Профили пользователей'
 
     def __str__(self):
-        return f"{self.username} ({self.email})"
-
-    def get_full_name(self):
-        return f"{self.first_name} {self.last_name}"
-
-    def get_short_name(self):
-        return self.first_name
+        return self.email
 
 
 class Subscription(models.Model):
     user = models.ForeignKey(
-        to=User,
+        Profile,
         on_delete=models.CASCADE,
-        related_name='follower'
+        related_name='followings'
     )
     author = models.ForeignKey(
-        to=User,
+        Profile,
         on_delete=models.CASCADE,
-        related_name='following'
+        related_name='followers'
     )
 
     class Meta:
-        verbose_name = 'Подписка'
+        ordering = ['user', 'author']
+        constraints = [
+            UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_subscription'
+            )
+        ]
+        verbose_name = 'подписку'
         verbose_name_plural = 'Подписки'
-        unique_together = ('user', 'author')

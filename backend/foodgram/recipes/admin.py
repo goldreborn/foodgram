@@ -1,74 +1,49 @@
-"""
-Модуль администрирования для рецептов.
 
-В этом модуле определены классы администрирования для тегов,
-ингредиентов, рецептов, избранного и списка покупок.
-"""
 from django.contrib import admin
+from django.contrib.admin import display
 
-from recipes import models
-
-
-class RecipeIngredientInline(admin.TabularInline):
-    model = models.RecipeIngredient
-    extra = 1
+from .models import (Favourite, Ingredient, IngredientInRecipe, Recipe,
+                     ShoppingCart, Tag)
 
 
-class TagAdmin(admin.ModelAdmin):
-    """Класс администрирования для тегов."""
-
-    list_display = ('pk', 'name', 'slug')
-    search_fields = ('name', 'slug')
-    list_filter = ('name', 'slug')
-
-
-class IngredientAdmin(admin.ModelAdmin):
-    """Класс администрирования для ингредиентов."""
-
-    list_display = ('pk', 'name', 'measurement_unit')
-    search_fields = ('name',)
-    list_filter = ('name',)
-
-
+@admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    """Класс администрирования для рецептов."""
+    list_display = (
+        'name',
+        'id',
+        'author',
+        'added_in_favorites',
+        'short_link_hash'
+    )
+    readonly_fields = ('added_in_favorites',)
+    list_filter = ('author', 'name', 'tags',)
 
-    list_display = ('pk', 'name', 'author', 'favorites_amount')
-    search_fields = ('name', 'author', 'ingredients')
-    list_filter = ('name', 'author', 'tags')
-    inlines = [RecipeIngredientInline]
-
-    def favorites_amount(self, obj):
-        """
-        Метод для отображения количества добавлений в избранное.
-
-        obj: объект рецепта
-        return: количество добавлений в избранное
-        """
+    @display(description='Количество в избранных')
+    def added_in_favorites(self, obj):
         return obj.favorites.count()
 
 
-class RecipeIngredientAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'recipe', 'ingredient', 'amount')
+@admin.register(Ingredient)
+class IngredientAdmin(admin.ModelAdmin):
+    list_display = ('name', 'measurement_unit',)
+    list_filter = ('name',)
 
 
-class FavoriteAdmin(admin.ModelAdmin):
-    """Класс администрирования для избранного."""
-
-    list_display = ('pk', 'user', 'recipe')
-    search_fields = ('user', 'recipe')
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug',)
 
 
+@admin.register(ShoppingCart)
 class ShoppingCartAdmin(admin.ModelAdmin):
-    """Класс администрирования для списка покупок."""
-
-    list_display = ('pk', 'user', 'recipe')
-    search_fields = ('user', 'recipe')
+    list_display = ('user', 'recipe',)
 
 
-admin.site.register(models.Tag, TagAdmin)
-admin.site.register(models.Ingredient, IngredientAdmin)
-admin.site.register(models.Recipe, RecipeAdmin)
-admin.site.register(models.RecipeIngredient, RecipeIngredientAdmin)
-admin.site.register(models.Favorite, FavoriteAdmin)
-admin.site.register(models.ShoppingCart, ShoppingCartAdmin)
+@admin.register(Favourite)
+class FavouriteAdmin(admin.ModelAdmin):
+    list_display = ('user', 'recipe',)
+
+
+@admin.register(IngredientInRecipe)
+class IngredientInRecipe(admin.ModelAdmin):
+    list_display = ('recipe', 'ingredient', 'amount',)

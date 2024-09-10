@@ -1,20 +1,22 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+
+from .models import Profile, Subscription
 
 
-from .models import User, Subscription
-
-
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'email', 'username', 'first_name', 'last_name')
+@admin.register(Profile)
+class ProfileAdmin(UserAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff')
     search_fields = ('username', 'email', 'first_name', 'last_name')
-    list_filter = ('username', 'email')
+    readonly_fields = ('date_joined', 'last_login')
+
+    filter_horizontal = ()
+    list_filter = ()
+    fieldsets = ()
 
 
+@admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'user', 'author')
-    search_fields = ('user', 'author')
-    list_filter = ('user', 'author')
-
-
-admin.site.register(User, UserAdmin)
-admin.site.register(Subscription, SubscriptionAdmin)
+    list_display = ('user', 'author')
+    search_fields = ('user__username', 'author__username')
+    list_filter = ('user__username', 'author__username')
