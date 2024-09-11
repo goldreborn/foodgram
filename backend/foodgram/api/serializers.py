@@ -39,7 +39,7 @@ class ProfileSerializer(ModelSerializer):
         return (
             request and user.is_authenticated and Subscription.objects.filter(
                 user=user, author=obj).exists()
-            )
+                )
 
 
 class AvatarSerializer(ModelSerializer):
