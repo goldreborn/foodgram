@@ -38,10 +38,8 @@ class ProfileSerializer(ModelSerializer):
 
         return (
             request and user.is_authenticated and Subscription.objects.filter(
-                    user=user,
-                    author=obj
-                ).exists()
-                )
+                user=user, author=obj).exists()
+            )
 
 
 class AvatarSerializer(ModelSerializer):
@@ -153,14 +151,10 @@ class RecipeReadSerializer(ModelSerializer):
         )
 
     def get_ingredients(self, obj):
-        recipe = obj
-        ingredients = recipe.ingredients.values(
-            'id',
-            'name',
-            'measurement_unit',
+        return obj.ingredients.values(
+            'id', 'name', 'measurement_unit',
             amount=F('ingredientinrecipe__amount')
         )
-        return ingredients
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
