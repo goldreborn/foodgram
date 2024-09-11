@@ -183,7 +183,7 @@ class RecipeViewSet(ModelViewSet):
             'recipe': pk
         }
         try:
-            recipe = Recipe.objects.get(id=pk)
+            _ = Recipe.objects.get(id=pk)
         except Recipe.DoesNotExist:
             return Response({
                 'errors': 'Рецепт не найден'
@@ -220,7 +220,7 @@ class RecipeViewSet(ModelViewSet):
         }
 
         try:
-            recipe = Recipe.objects.get(id=pk)
+            _ = Recipe.objects.get(id=pk)
         except Recipe.DoesNotExist:
             return Response({
                 'errors': 'Рецепт не найден'
